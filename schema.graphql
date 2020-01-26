@@ -1,0 +1,61 @@
+# GraphQL schema
+
+# base user
+type User {
+  id: ID!
+  firstName: String!
+  lastName: String!
+  email: String!
+  PhoneNumber: String!
+}
+
+# user registration input
+input RegisterUserInput {
+  firstName: String!
+  lastName: String!
+  email: String!
+  PhoneNumber: String!
+  Password: String!
+}
+
+# register user payload
+type RegisterUserPayload {
+  user: User
+  jwtToken: String
+  statusCode: String!
+  message: String!
+}
+
+# user login input
+input LoginUserInput {
+  email: String!
+  PhoneNumber: String!
+  Password: String!
+}
+
+# login user payload
+type LoginUserPayload {
+  user: User
+  jwtToken: String
+  statusCode: String!
+  message: String!
+}
+
+# request user payload
+type UserPayload {
+  user: User!
+  statusCode: String!
+  message: String!
+}
+
+# All queries
+type Query {
+  loginUser(input: LoginUserInput!): LoginUserPayload!
+  users: [UserPayload!]!
+  user(id: String!): UserPayload!
+}
+
+# All mutations
+type Mutation {
+  registerUser(input: RegisterUserInput!): RegisterUserPayload!
+}
