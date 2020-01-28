@@ -7,11 +7,20 @@ import (
 
 	"github.com/99designs/gqlgen/handler"
 	golang_graphql_authentication "github.com/machariamuguku/golang-graphql-authentication"
+	db "github.com/machariamuguku/golang-graphql-authentication/db"
 )
 
 const defaultPort = "8080"
 
 func main() {
+
+	db, err := db.ConnectDB()
+	if err != nil {
+		panic(err)
+	}
+
+	defer db.Close()
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = defaultPort
