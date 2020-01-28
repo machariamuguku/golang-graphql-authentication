@@ -2,6 +2,10 @@
 
 package golang_graphql_authentication
 
+import (
+	"time"
+)
+
 type LoginUserInput struct {
 	Email       string `json:"email"`
 	PhoneNumber string `json:"PhoneNumber"`
@@ -31,11 +35,12 @@ type RegisterUserPayload struct {
 }
 
 type User struct {
-	ID          string `json:"id"`
-	FirstName   string `json:"firstName"`
-	LastName    string `json:"lastName"`
-	Email       string `json:"email"`
-	PhoneNumber string `json:"PhoneNumber"`
+	ID          string    `json:"id"`
+	FirstName   string    `json:"firstName"`
+	LastName    string    `json:"lastName"`
+	Email       string    `json:"email"`
+	PhoneNumber string    `json:"PhoneNumber"`
+	CreatedAt   time.Time `json:"createdAt"`
 }
 
 type UserPayload struct {
