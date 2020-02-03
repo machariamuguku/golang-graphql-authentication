@@ -9,7 +9,6 @@ import (
 	"strconv"
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
@@ -68,7 +67,6 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		CreatedAt   func(childComplexity int) int
 		Email       func(childComplexity int) int
 		FirstName   func(childComplexity int) int
 		ID          func(childComplexity int) int
@@ -206,13 +204,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.RegisterUserPayload.User(childComplexity), true
 
-	case "User.createdAt":
-		if e.complexity.User.CreatedAt == nil {
-			break
-		}
-
-		return e.complexity.User.CreatedAt(childComplexity), true
-
 	case "User.email":
 		if e.complexity.User.Email == nil {
 			break
@@ -241,7 +232,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.LastName(childComplexity), true
 
-	case "User.PhoneNumber":
+	case "User.phoneNumber":
 		if e.complexity.User.PhoneNumber == nil {
 			break
 		}
@@ -339,8 +330,7 @@ type User {
   firstName: String!
   lastName: String!
   email: String!
-  PhoneNumber: String!
-  createdAt: Time!
+  phoneNumber: String!
 }
 
 # user registration input
@@ -348,8 +338,8 @@ input RegisterUserInput {
   firstName: String!
   lastName: String!
   email: String!
-  PhoneNumber: String!
-  Password: String!
+  phoneNumber: String!
+  password: String!
 }
 
 # register user payload
@@ -363,8 +353,8 @@ type RegisterUserPayload {
 # user login input
 input LoginUserInput {
   email: String!
-  PhoneNumber: String!
-  Password: String!
+  phoneNumber: String!
+  password: String!
 }
 
 # login user payload
@@ -382,7 +372,7 @@ type UserPayload {
   message: String!
 }
 
-scalar Time
+# scalar Time
 
 # All queries
 type Query {
@@ -1170,7 +1160,7 @@ func (ec *executionContext) _User_email(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _User_PhoneNumber(ctx context.Context, field graphql.CollectedField, obj *User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_phoneNumber(ctx context.Context, field graphql.CollectedField, obj *User) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
 		if r := recover(); r != nil {
@@ -1205,43 +1195,6 @@ func (ec *executionContext) _User_PhoneNumber(ctx context.Context, field graphql
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _User_createdAt(ctx context.Context, field graphql.CollectedField, obj *User) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "User",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.CreatedAt, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(time.Time)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserPayload_user(ctx context.Context, field graphql.CollectedField, obj *UserPayload) (ret graphql.Marshaler) {
@@ -2518,13 +2471,13 @@ func (ec *executionContext) unmarshalInputLoginUserInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-		case "PhoneNumber":
+		case "phoneNumber":
 			var err error
 			it.PhoneNumber, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "Password":
+		case "password":
 			var err error
 			it.Password, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -2560,13 +2513,13 @@ func (ec *executionContext) unmarshalInputRegisterUserInput(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
-		case "PhoneNumber":
+		case "phoneNumber":
 			var err error
 			it.PhoneNumber, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
-		case "Password":
+		case "password":
 			var err error
 			it.Password, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -2792,13 +2745,8 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "PhoneNumber":
-			out.Values[i] = ec._User_PhoneNumber(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "createdAt":
-			out.Values[i] = ec._User_createdAt(ctx, field, obj)
+		case "phoneNumber":
+			out.Values[i] = ec._User_phoneNumber(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3165,20 +3113,6 @@ func (ec *executionContext) unmarshalNString2string(ctx context.Context, v inter
 
 func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalString(v)
-	if res == graphql.Null {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
-	return graphql.UnmarshalTime(v)
-}
-
-func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
-	res := graphql.MarshalTime(v)
 	if res == graphql.Null {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")
