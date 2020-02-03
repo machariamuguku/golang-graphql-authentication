@@ -7,7 +7,7 @@ import (
 
 	"github.com/99designs/gqlgen/handler"
 	golang_graphql_authentication "github.com/machariamuguku/golang-graphql-authentication"
-	db "github.com/machariamuguku/golang-graphql-authentication/db"
+	"github.com/machariamuguku/golang-graphql-authentication/db"
 )
 
 const defaultPort = "8080"
@@ -27,7 +27,7 @@ func main() {
 	}
 
 	http.Handle("/", handler.Playground("GraphQL playground", "/query"))
-	http.Handle("/query", handler.GraphQL(golang_graphql_authentication.NewExecutableSchema(golang_graphql_authentication.Config{Resolvers: &golang_graphql_authentication.Resolver{}})))
+	http.Handle("/query", handler.GraphQL(golang_graphql_authentication.NewExecutableSchema(golang_graphql_authentication.Config{Resolvers: &golang_graphql_authentication.Resolver{DB: db}})))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
