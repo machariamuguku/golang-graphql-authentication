@@ -1,8 +1,9 @@
-package golang_graphql_authentication
+package db
 
 import (
 	"fmt"
 	"github.com/jinzhu/gorm"
+	// gorm postgres dialect- comment to justify underscore import
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/joho/godotenv"
 	"log"
