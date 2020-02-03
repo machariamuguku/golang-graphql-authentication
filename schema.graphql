@@ -6,8 +6,7 @@ type User {
   firstName: String!
   lastName: String!
   email: String!
-  PhoneNumber: String!
-  createdAt: Time!
+  phoneNumber: String!
 }
 
 # user registration input
@@ -15,8 +14,8 @@ input RegisterUserInput {
   firstName: String!
   lastName: String!
   email: String!
-  PhoneNumber: String!
-  Password: String!
+  phoneNumber: String!
+  password: String!
 }
 
 # register user payload
@@ -30,8 +29,8 @@ type RegisterUserPayload {
 # user login input
 input LoginUserInput {
   email: String!
-  PhoneNumber: String!
-  Password: String!
+  phoneNumber: String!
+  password: String!
 }
 
 # login user payload
@@ -49,7 +48,7 @@ type UserPayload {
   message: String!
 }
 
-scalar Time
+# scalar Time
 
 # All queries
 type Query {
