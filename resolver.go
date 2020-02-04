@@ -5,15 +5,16 @@ package golang_graphql_authentication
 import (
 	"context"
 	"errors"
+	"log"
+	"os"
+	"time"
+
 	"github.com/dgrijalva/jwt-go"
 	"github.com/google/uuid"
 	"github.com/machariamuguku/golang-graphql-authentication/db"
 	"github.com/machariamuguku/golang-graphql-authentication/models"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 )
-
-// THIS CODE IS A STARTING POINT ONLY. IT WILL NOT BE UPDATED WITH SCHEMA CHANGES.
 
 type Resolver struct {
 	users []*User
@@ -52,9 +53,6 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 		}, nil
 	}
 
-	// generate jwt Token
-	jwtToken := "001t0o3nmate"
-
 	// format object to save to db
 	newUser := &models.GormUser{
 		ID:          uuid.String(),
@@ -83,14 +81,14 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 			User:       nil,
 			JwtToken:   nil,
 			StatusCode: "400",
-			Message:    "user with that email already exists!",
+			Message:    "a user with that email already exists!",
 		}, nil
 	}
 
 	// if not save the object to the db
 	err := db.Create(&newUser).Error
 
-	// if there's an error saving return an error
+	// if there's an error saving
 	if err != nil {
 		// log the error for the backend
 		log.Printf("ResolveRegisterUser: error saving user: %v", err)
@@ -102,6 +100,47 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 			StatusCode: "500",
 			Message:    "Server error, try again!",
 		}, nil
+	}
+
+	// get JWT Secret
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	// if it returns an empty key
+	if jwtSecret == "" {
+		// log for the backend
+		log.Printf("ResolveRegisterUser: jwt secret returned empty")
+		// then set another placeholder jwt secret
+		jwtSecret = "a_very_!@#$%^&_secret"
+	}
+
+	// Create the JWT key used to create the jwt signature
+	var jwtKey = []byte(jwtSecret)
+
+	// Declare the expiration time of the token
+	// 5 minutes
+	expirationTime := time.Now().Add(5 * time.Minute)
+
+	// Create the JWT claims (body)
+	// with a username and an expiry time
+	claims := &models.Claims{
+		Username: newUser.Email,
+		StandardClaims: jwt.StandardClaims{
+			// expiry time in unix milliseconds
+			ExpiresAt: expirationTime.Unix(),
+		},
+	}
+
+	// Declare the token with the algorithm used for signing, and the claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Create the JWT string (sign)
+	jwtToken, jwtErr := token.SignedString(jwtKey)
+	if jwtErr != nil {
+		// If there is an error creating the JWT
+
+		// log the error for the backend
+		log.Printf("ResolveRegisterUser: error saving user: %v", jwtErr)
+
 	}
 
 	// format return object
