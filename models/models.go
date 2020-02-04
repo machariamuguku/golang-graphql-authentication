@@ -1,6 +1,7 @@
 package models
 
 import (
+	"github.com/dgrijalva/jwt-go"
 	"time"
 )
 
@@ -15,4 +16,11 @@ type GormUser struct {
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   *time.Time `sql:"index"`
+}
+
+//Claims : struct that will be encoded to a JWT.
+// We add jwt.StandardClaims as an embedded type, to provide fields like expiry time
+type Claims struct {
+	Username string `json:"username"`
+	jwt.StandardClaims
 }
