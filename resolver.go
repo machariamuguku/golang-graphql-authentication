@@ -10,10 +10,21 @@ import (
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/machariamuguku/golang-graphql-authentication/db"
 	"github.com/machariamuguku/golang-graphql-authentication/models"
 	"golang.org/x/crypto/bcrypt"
+
+	"github.com/go-playground/locales/en"
+	ut "github.com/go-playground/universal-translator"
+	en_translations "github.com/go-playground/validator/v10/translations/en"
+)
+
+// validate and universal translate instances
+var (
+	uni      *ut.UniversalTranslator
+	validate *validator.Validate
 )
 
 type Resolver struct {
@@ -62,6 +73,55 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 		PhoneNumber: input.PhoneNumber,
 		Password:    input.Password,
 	}
+
+	// from here
+
+	// validate the inputs
+
+	// english locale
+	en := en.New()
+	// universal translator for english
+	uni = ut.New(en, en)
+
+	// translator for english
+	// this is usually know or extracted from http 'Accept-Language' header
+	// also see uni.FindTranslator(...)
+	trans, _ := uni.GetTranslator("en")
+
+	// validate v10 instance
+	validate = validator.New()
+
+	en_translations.RegisterDefaultTranslations(validate, trans)
+
+	// returns nil or ValidationErrors ( []FieldError )
+	ValidationErr := validate.Struct(newUser)
+
+	if ValidationErr != nil {
+
+		errs := ValidationErr.(validator.ValidationErrors)
+
+		// //  translate each error one at a time.
+		// for _, e := range errs {
+
+		// 	log.Println(e.Translate(trans))
+		// }
+
+		// returns a map with key = namespace & value = translated error
+		log.Println(errs.Translate(trans))
+
+		// Todo: return errors to user as an array?
+
+		// return validation error
+		return &RegisterUserPayload{
+			User:       nil,
+			JwtToken:   nil,
+			StatusCode: "400",
+			Message:    "input validation errors!",
+		}, nil
+
+	}
+
+	// to here
 
 	// hash the password
 	hashed, hashPassErr := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
