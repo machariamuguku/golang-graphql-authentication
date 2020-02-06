@@ -18,12 +18,19 @@ input RegisterUserInput {
   password: String!
 }
 
+# a field validation errors object
+type FieldErrors {
+  field: String!
+  error: String!
+}
+
 # register user payload
 type RegisterUserPayload {
   user: User
   jwtToken: String
   statusCode: String!
   message: String!
+  fieldErrors: [FieldErrors]!
 }
 
 # user login input
