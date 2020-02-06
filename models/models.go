@@ -23,6 +23,5 @@ type GormUser struct {
 // We add jwt.StandardClaims as an embedded type, to provide fields like expiry time
 type Claims struct {
 	UserID   string `json:"userid"`
-	Username string `json:"username"`
 	jwt.StandardClaims
 }
