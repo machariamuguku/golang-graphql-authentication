@@ -4,7 +4,6 @@ package golang_graphql_authentication
 
 import (
 	"context"
-	"errors"
 	"log"
 	"os"
 	"time"
@@ -44,23 +43,95 @@ type mutationResolver struct{ *Resolver }
 
 func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*RegisterUserPayload, error) {
 
+	// validate input fields
+
+	// english locale
+	en := en.New()
+	// universal english translator
+	uni = ut.New(en, en)
+
+	// translator for english
+	// this is usually know/extracted from http 'Accept-Language' header
+	trans, _ := uni.GetTranslator("en")
+
+	// initialize validate v10 instance
+	validate = validator.New()
+
+	en_translations.RegisterDefaultTranslations(validate, trans)
+
+	// validate against the validation struct
+	// returns nil or ValidationErrors ( []FieldError )
+	ValidationErr := validate.Struct(&models.GormUser{
+		FirstName:   input.FirstName,
+		LastName:    input.LastName,
+		Email:       input.Email,
+		PhoneNumber: input.PhoneNumber,
+		Password:    input.Password,
+	})
+
+	// if validation errors
+	if ValidationErr != nil {
+
+		// init a slice of field errors
+		var errorsSlice []*FieldErrors
+
+		errs := ValidationErr.(validator.ValidationErrors)
+
+		//  translate each error at a time.
+		for _, e := range errs {
+			// model the resultant errors to the expected (fieldErrors struct)
+			errors := &FieldErrors{
+				Field: e.Field(),
+				Error: e.Translate(trans),
+			}
+			// append to the errorsSlice
+			errorsSlice = append(errorsSlice, errors)
+		}
+
+		// return with validation error
+		return &RegisterUserPayload{
+			User:        nil,
+			JwtToken:    nil,
+			StatusCode:  "400",
+			Message:     "Input validation errors!",
+			FieldErrors: errorsSlice,
+		}, nil
+
+	}
+
+	// if no validation errors
 	// initialize the db instance
 	db := r.DB
+
+	// check if user already exists
+	if !db.Where("email = ?", input.Email).First(&models.GormUser{}).RecordNotFound() {
+		// if they do return user already exists
+		return &RegisterUserPayload{
+			User:        nil,
+			JwtToken:    nil,
+			StatusCode:  "400",
+			Message:     "A user with that email already exists!",
+			FieldErrors: nil,
+		}, nil
+	}
+
+	// if user doesn't already exist
 
 	// generate random uuid
 	uuid, UIDGenerationErr := uuid.NewRandom()
 
-	// if there's an error generating uuid log error
+	// if there's an error generating uuid
 	if UIDGenerationErr != nil {
 		// log the error for the backend
 		log.Printf("ResolveRegisterUser: uid generation error: %v", UIDGenerationErr)
 
 		// return an error
 		return &RegisterUserPayload{
-			User:       nil,
-			JwtToken:   nil,
-			StatusCode: "500",
-			Message:    "Server error, try again!",
+			User:        nil,
+			JwtToken:    nil,
+			StatusCode:  "500",
+			Message:     "Server error, try again!",
+			FieldErrors: nil,
 		}, nil
 	}
 
@@ -74,59 +145,10 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 		Password:    input.Password,
 	}
 
-	// from here
-
-	// validate the inputs
-
-	// english locale
-	en := en.New()
-	// universal translator for english
-	uni = ut.New(en, en)
-
-	// translator for english
-	// this is usually know or extracted from http 'Accept-Language' header
-	// also see uni.FindTranslator(...)
-	trans, _ := uni.GetTranslator("en")
-
-	// validate v10 instance
-	validate = validator.New()
-
-	en_translations.RegisterDefaultTranslations(validate, trans)
-
-	// returns nil or ValidationErrors ( []FieldError )
-	ValidationErr := validate.Struct(newUser)
-
-	if ValidationErr != nil {
-
-		errs := ValidationErr.(validator.ValidationErrors)
-
-		// //  translate each error one at a time.
-		// for _, e := range errs {
-
-		// 	log.Println(e.Translate(trans))
-		// }
-
-		// returns a map with key = namespace & value = translated error
-		log.Println(errs.Translate(trans))
-
-		// Todo: return errors to user as an array?
-
-		// return validation error
-		return &RegisterUserPayload{
-			User:       nil,
-			JwtToken:   nil,
-			StatusCode: "400",
-			Message:    "input validation errors!",
-		}, nil
-
-	}
-
-	// to here
-
-	// hash the password
+	// hash password
 	hashed, hashPassErr := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
 
-	// error hashing pass
+	// if error hashing pass
 	if hashPassErr != nil {
 		log.Printf("ResolveRegisterUser: password hashing error: %v", hashPassErr)
 	}
@@ -134,18 +156,7 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 	// re-assign pass to hashed
 	newUser.Password = string(hashed)
 
-	// check if user already exists
-	if !db.Where("email = ?", input.Email).First(&models.GormUser{}).RecordNotFound() {
-		// return user already exists
-		return &RegisterUserPayload{
-			User:       nil,
-			JwtToken:   nil,
-			StatusCode: "400",
-			Message:    "a user with that email already exists!",
-		}, nil
-	}
-
-	// if not save the object to the db
+	// try to save the object to the db
 	err := db.Create(&newUser).Error
 
 	// if there's an error saving
@@ -155,14 +166,18 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 
 		// return an error
 		return &RegisterUserPayload{
-			User:       nil,
-			JwtToken:   nil,
-			StatusCode: "500",
-			Message:    "Server error, try again!",
+			User:        nil,
+			JwtToken:    nil,
+			StatusCode:  "500",
+			Message:     "Server error, try again!",
+			FieldErrors: nil,
 		}, nil
 	}
 
-	// get JWT Secret
+	// if save successful
+	// generate jwt token
+
+	// get JWT Secret from .env
 	jwtSecret := os.Getenv("JWT_SECRET")
 
 	// if it returns an empty key
@@ -180,13 +195,13 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 	// 5 minutes
 	expirationTime := time.Now().Add(5 * time.Minute)
 
-	// Create the JWT claims (body)
-	// with a username and an expiry time
+	// Create the JWT claims (jwt body)
+	// with username, issued at time and expiry time in unix milliseconds
 	claims := &models.Claims{
-		Username: newUser.Email,
+		UserID: newUser.ID,
 		StandardClaims: jwt.StandardClaims{
-			// expiry time in unix milliseconds
 			ExpiresAt: expirationTime.Unix(),
+			IssuedAt:  time.Now().Unix(),
 		},
 	}
 
@@ -197,7 +212,6 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 	jwtToken, jwtErr := token.SignedString(jwtKey)
 	if jwtErr != nil {
 		// If there is an error creating the JWT
-
 		// log the error for the backend
 		log.Printf("ResolveRegisterUser: error saving user: %v", jwtErr)
 
@@ -212,9 +226,10 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 			Email:       newUser.Email,
 			PhoneNumber: newUser.PhoneNumber,
 		},
-		JwtToken:   &jwtToken,
-		StatusCode: "200",
-		Message:    "this shit succeeded!",
+		JwtToken:    &jwtToken,
+		StatusCode:  "200",
+		Message:     "User successfully registered!",
+		FieldErrors: nil,
 	}
 
 	// return created object
@@ -224,41 +239,7 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 type queryResolver struct{ *Resolver }
 
 func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*LoginUserPayload, error) {
-	// the jwtToken
-	jwtToken := "001t0o3nmate"
-
-	Login := &LoginUserPayload{
-		User: &User{
-			ID:          "001",
-			FirstName:   "njoroge",
-			LastName:    "kaihu",
-			Email:       input.Email,
-			PhoneNumber: input.PhoneNumber,
-		},
-		JwtToken:   &jwtToken,
-		StatusCode: "200",
-		Message:    "this shit succeeded",
-	}
-
-	err := errors.New("Sorry, the user couldn't be logged in")
-
-	// if error: log error to std-io
-	// return status code and message for front end
-	if err != nil {
-		// log the error for use in the backend
-		// starting with the function name
-		log.Printf("ResolveLoginUser: %v", err)
-
-		// return nulls
-		failed := &LoginUserPayload{
-			StatusCode: "400",
-			Message:    "Sorry, the user couldn't be logged in",
-		}
-
-		return failed, nil
-	}
-
-	return Login, nil
+	panic("not implemented")
 }
 func (r *queryResolver) Users(ctx context.Context) ([]*UserPayload, error) {
 	panic("not implemented")
