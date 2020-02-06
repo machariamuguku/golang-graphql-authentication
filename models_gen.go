@@ -2,6 +2,11 @@
 
 package golang_graphql_authentication
 
+type FieldErrors struct {
+	Field string `json:"field"`
+	Error string `json:"error"`
+}
+
 type LoginUserInput struct {
 	Email       string `json:"email"`
 	PhoneNumber string `json:"phoneNumber"`
@@ -24,10 +29,11 @@ type RegisterUserInput struct {
 }
 
 type RegisterUserPayload struct {
-	User       *User   `json:"user"`
-	JwtToken   *string `json:"jwtToken"`
-	StatusCode string  `json:"statusCode"`
-	Message    string  `json:"message"`
+	User        *User          `json:"user"`
+	JwtToken    *string        `json:"jwtToken"`
+	StatusCode  string         `json:"statusCode"`
+	Message     string         `json:"message"`
+	FieldErrors []*FieldErrors `json:"fieldErrors"`
 }
 
 type User struct {

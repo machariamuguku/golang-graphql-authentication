@@ -42,6 +42,11 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	FieldErrors struct {
+		Error func(childComplexity int) int
+		Field func(childComplexity int) int
+	}
+
 	LoginUserPayload struct {
 		JwtToken   func(childComplexity int) int
 		Message    func(childComplexity int) int
@@ -60,10 +65,11 @@ type ComplexityRoot struct {
 	}
 
 	RegisterUserPayload struct {
-		JwtToken   func(childComplexity int) int
-		Message    func(childComplexity int) int
-		StatusCode func(childComplexity int) int
-		User       func(childComplexity int) int
+		FieldErrors func(childComplexity int) int
+		JwtToken    func(childComplexity int) int
+		Message     func(childComplexity int) int
+		StatusCode  func(childComplexity int) int
+		User        func(childComplexity int) int
 	}
 
 	User struct {
@@ -104,6 +110,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "FieldErrors.error":
+		if e.complexity.FieldErrors.Error == nil {
+			break
+		}
+
+		return e.complexity.FieldErrors.Error(childComplexity), true
+
+	case "FieldErrors.field":
+		if e.complexity.FieldErrors.Field == nil {
+			break
+		}
+
+		return e.complexity.FieldErrors.Field(childComplexity), true
 
 	case "LoginUserPayload.jwtToken":
 		if e.complexity.LoginUserPayload.JwtToken == nil {
@@ -175,6 +195,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Users(childComplexity), true
+
+	case "RegisterUserPayload.fieldErrors":
+		if e.complexity.RegisterUserPayload.FieldErrors == nil {
+			break
+		}
+
+		return e.complexity.RegisterUserPayload.FieldErrors(childComplexity), true
 
 	case "RegisterUserPayload.jwtToken":
 		if e.complexity.RegisterUserPayload.JwtToken == nil {
@@ -342,12 +369,19 @@ input RegisterUserInput {
   password: String!
 }
 
+# a field validation errors object
+type FieldErrors {
+  field: String!
+  error: String!
+}
+
 # register user payload
 type RegisterUserPayload {
   user: User
   jwtToken: String
   statusCode: String!
   message: String!
+  fieldErrors: [FieldErrors]!
 }
 
 # user login input
@@ -483,6 +517,80 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _FieldErrors_field(ctx context.Context, field graphql.CollectedField, obj *FieldErrors) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "FieldErrors",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Field, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FieldErrors_error(ctx context.Context, field graphql.CollectedField, obj *FieldErrors) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "FieldErrors",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
 
 func (ec *executionContext) _LoginUserPayload_user(ctx context.Context, field graphql.CollectedField, obj *LoginUserPayload) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
@@ -1010,6 +1118,43 @@ func (ec *executionContext) _RegisterUserPayload_message(ctx context.Context, fi
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _RegisterUserPayload_fieldErrors(ctx context.Context, field graphql.CollectedField, obj *RegisterUserPayload) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "RegisterUserPayload",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FieldErrors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*FieldErrors)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFieldErrors2ᚕᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐFieldErrors(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *User) (ret graphql.Marshaler) {
@@ -2539,6 +2684,38 @@ func (ec *executionContext) unmarshalInputRegisterUserInput(ctx context.Context,
 
 // region    **************************** object.gotpl ****************************
 
+var fieldErrorsImplementors = []string{"FieldErrors"}
+
+func (ec *executionContext) _FieldErrors(ctx context.Context, sel ast.SelectionSet, obj *FieldErrors) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, fieldErrorsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("FieldErrors")
+		case "field":
+			out.Values[i] = ec._FieldErrors_field(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "error":
+			out.Values[i] = ec._FieldErrors_error(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 var loginUserPayloadImplementors = []string{"LoginUserPayload"}
 
 func (ec *executionContext) _LoginUserPayload(ctx context.Context, sel ast.SelectionSet, obj *LoginUserPayload) graphql.Marshaler {
@@ -2700,6 +2877,11 @@ func (ec *executionContext) _RegisterUserPayload(ctx context.Context, sel ast.Se
 			}
 		case "message":
 			out.Values[i] = ec._RegisterUserPayload_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "fieldErrors":
+			out.Values[i] = ec._RegisterUserPayload_fieldErrors(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3055,6 +3237,43 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNFieldErrors2ᚕᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐFieldErrors(ctx context.Context, sel ast.SelectionSet, v []*FieldErrors) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		rctx := &graphql.ResolverContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithResolverContext(ctx, rctx)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOFieldErrors2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐFieldErrors(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
@@ -3433,6 +3652,17 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 		return graphql.Null
 	}
 	return ec.marshalOBoolean2bool(ctx, sel, *v)
+}
+
+func (ec *executionContext) marshalOFieldErrors2githubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐFieldErrors(ctx context.Context, sel ast.SelectionSet, v FieldErrors) graphql.Marshaler {
+	return ec._FieldErrors(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalOFieldErrors2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐFieldErrors(ctx context.Context, sel ast.SelectionSet, v *FieldErrors) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._FieldErrors(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
