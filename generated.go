@@ -379,7 +379,7 @@ type FieldErrors {
 type RegisterUserPayload {
   user: User
   jwtToken: String
-  statusCode: String!
+  statusCode: Int!
   message: String!
   fieldErrors: [FieldErrors]!
 }
@@ -395,14 +395,14 @@ input LoginUserInput {
 type LoginUserPayload {
   user: User
   jwtToken: String
-  statusCode: String!
+  statusCode: Int!
   message: String!
 }
 
 # request user payload
 type UserPayload {
   user: User!
-  statusCode: String!
+  statusCode: Int!
   message: String!
 }
 
@@ -691,10 +691,10 @@ func (ec *executionContext) _LoginUserPayload_statusCode(ctx context.Context, fi
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _LoginUserPayload_message(ctx context.Context, field graphql.CollectedField, obj *LoginUserPayload) (ret graphql.Marshaler) {
@@ -1077,10 +1077,10 @@ func (ec *executionContext) _RegisterUserPayload_statusCode(ctx context.Context,
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _RegisterUserPayload_message(ctx context.Context, field graphql.CollectedField, obj *RegisterUserPayload) (ret graphql.Marshaler) {
@@ -1410,10 +1410,10 @@ func (ec *executionContext) _UserPayload_statusCode(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int)
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserPayload_message(ctx context.Context, field graphql.CollectedField, obj *UserPayload) (ret graphql.Marshaler) {
@@ -3282,6 +3282,20 @@ func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface
 
 func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	res := graphql.MarshalID(v)
+	if res == graphql.Null {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	return graphql.UnmarshalInt(v)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
 	if res == graphql.Null {
 		if !ec.HasError(graphql.GetResolverContext(ctx)) {
 			ec.Errorf(ctx, "must not be null")

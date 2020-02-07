@@ -16,7 +16,7 @@ type LoginUserInput struct {
 type LoginUserPayload struct {
 	User       *User   `json:"user"`
 	JwtToken   *string `json:"jwtToken"`
-	StatusCode string  `json:"statusCode"`
+	StatusCode int     `json:"statusCode"`
 	Message    string  `json:"message"`
 }
 
@@ -31,7 +31,7 @@ type RegisterUserInput struct {
 type RegisterUserPayload struct {
 	User        *User          `json:"user"`
 	JwtToken    *string        `json:"jwtToken"`
-	StatusCode  string         `json:"statusCode"`
+	StatusCode  int            `json:"statusCode"`
 	Message     string         `json:"message"`
 	FieldErrors []*FieldErrors `json:"fieldErrors"`
 }
@@ -46,6 +46,6 @@ type User struct {
 
 type UserPayload struct {
 	User       *User  `json:"user"`
-	StatusCode string `json:"statusCode"`
+	StatusCode int    `json:"statusCode"`
 	Message    string `json:"message"`
 }
