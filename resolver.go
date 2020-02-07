@@ -12,6 +12,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/machariamuguku/golang-graphql-authentication/db"
+	"github.com/machariamuguku/golang-graphql-authentication/emails"
 	"github.com/machariamuguku/golang-graphql-authentication/models"
 	"golang.org/x/crypto/bcrypt"
 
@@ -217,8 +218,25 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 
 	}
 
-	// format return object
-	Register := &RegisterUserPayload{
+	// send user successfully created email
+	// with verify email link
+
+	// Todo: generate verify email link
+	// and wait for it in the email routine with channels
+	// also change response codes to int from string
+	// use 202 as success with warning?
+
+	// email subject
+	subject := "Welcome to www.muguku.co.ke! Confirm Your Email"
+
+	// content (in html)
+	emailContent := "<strong>You're on your way! Let's confirm your email address. By clicking on the following link, you are confirming your email address. Confirm Email Address</strong>"
+
+	// try to send the email in a different go routine (concurrency)
+	go emails.SendEmail(newUser.Email, subject, emailContent)
+
+	// if everything goes right return created object
+	return &RegisterUserPayload{
 		User: &User{
 			ID:          newUser.ID,
 			FirstName:   newUser.FirstName,
@@ -230,10 +248,7 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 		StatusCode:  "200",
 		Message:     "User successfully registered!",
 		FieldErrors: nil,
-	}
-
-	// return created object
-	return Register, nil
+	}, nil
 }
 
 type queryResolver struct{ *Resolver }
