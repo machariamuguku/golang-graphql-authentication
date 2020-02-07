@@ -13,6 +13,8 @@ require (
 	github.com/jinzhu/gorm v1.9.12
 	github.com/joho/godotenv v1.3.0
 	github.com/mattdamon108/go-graphql-api-boilerplate v0.0.0-20190914141941-8ac55961ea59 // indirect
+	github.com/sendgrid/rest v2.4.1+incompatible // indirect
+	github.com/sendgrid/sendgrid-go v3.5.0+incompatible
 	github.com/vektah/gqlparser v1.2.0
 	golang.org/x/crypto v0.0.0-20191205180655-e7c4368fe9dd
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
