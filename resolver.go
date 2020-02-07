@@ -93,7 +93,7 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 		return &RegisterUserPayload{
 			User:        nil,
 			JwtToken:    nil,
-			StatusCode:  "400",
+			StatusCode:  400,
 			Message:     "Input validation errors!",
 			FieldErrors: errorsSlice,
 		}, nil
@@ -110,7 +110,7 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 		return &RegisterUserPayload{
 			User:        nil,
 			JwtToken:    nil,
-			StatusCode:  "400",
+			StatusCode:  400,
 			Message:     "A user with that email already exists!",
 			FieldErrors: nil,
 		}, nil
@@ -130,7 +130,7 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 		return &RegisterUserPayload{
 			User:        nil,
 			JwtToken:    nil,
-			StatusCode:  "500",
+			StatusCode:  500,
 			Message:     "Server error, try again!",
 			FieldErrors: nil,
 		}, nil
@@ -169,7 +169,7 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 		return &RegisterUserPayload{
 			User:        nil,
 			JwtToken:    nil,
-			StatusCode:  "500",
+			StatusCode:  500,
 			Message:     "Server error, try again!",
 			FieldErrors: nil,
 		}, nil
@@ -223,8 +223,6 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 
 	// Todo: generate verify email link
 	// and wait for it in the email routine with channels
-	// also change response codes to int from string
-	// use 202 as success with warning?
 
 	// email subject
 	subject := "Welcome to www.muguku.co.ke! Confirm Your Email"
@@ -245,7 +243,7 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 			PhoneNumber: newUser.PhoneNumber,
 		},
 		JwtToken:    &jwtToken,
-		StatusCode:  "200",
+		StatusCode:  200,
 		Message:     "User successfully registered!",
 		FieldErrors: nil,
 	}, nil

@@ -28,7 +28,7 @@ type FieldErrors {
 type RegisterUserPayload {
   user: User
   jwtToken: String
-  statusCode: String!
+  statusCode: Int!
   message: String!
   fieldErrors: [FieldErrors]!
 }
@@ -44,14 +44,14 @@ input LoginUserInput {
 type LoginUserPayload {
   user: User
   jwtToken: String
-  statusCode: String!
+  statusCode: Int!
   message: String!
 }
 
 # request user payload
 type UserPayload {
   user: User!
-  statusCode: String!
+  statusCode: Int!
   message: String!
 }
 
