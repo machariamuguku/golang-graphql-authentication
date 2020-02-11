@@ -4,8 +4,10 @@ package golang_graphql_authentication
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -14,6 +16,7 @@ import (
 	"github.com/machariamuguku/golang-graphql-authentication/db"
 	"github.com/machariamuguku/golang-graphql-authentication/emails"
 	"github.com/machariamuguku/golang-graphql-authentication/models"
+	"github.com/machariamuguku/golang-graphql-authentication/utils"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/go-playground/locales/en"
@@ -63,11 +66,12 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 	// validate against the validation struct
 	// returns nil or ValidationErrors ( []FieldError )
 	ValidationErr := validate.Struct(&models.GormUser{
-		FirstName:   input.FirstName,
-		LastName:    input.LastName,
-		Email:       input.Email,
-		PhoneNumber: input.PhoneNumber,
-		Password:    input.Password,
+		FirstName:                    input.FirstName,
+		LastName:                     input.LastName,
+		Email:                        input.Email,
+		PhoneNumber:                  input.PhoneNumber,
+		Password:                     input.Password,
+		EmailVerificationCallBackURL: input.EmailVerificationCallBackURL,
 	})
 
 	// if validation errors
@@ -138,12 +142,13 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 
 	// format object to save to db
 	newUser := &models.GormUser{
-		ID:          uuid.String(),
-		FirstName:   input.FirstName,
-		LastName:    input.LastName,
-		Email:       input.Email,
-		PhoneNumber: input.PhoneNumber,
-		Password:    input.Password,
+		ID:                           uuid.String(),
+		FirstName:                    input.FirstName,
+		LastName:                     input.LastName,
+		Email:                        input.Email,
+		PhoneNumber:                  input.PhoneNumber,
+		Password:                     input.Password,
+		EmailVerificationCallBackURL: input.EmailVerificationCallBackURL,
 	}
 
 	// hash password
@@ -218,20 +223,48 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 
 	}
 
-	// send user successfully created email
-	// with verify email link
+	// Todo:
+	// wait for `random verification string` in the email routine with channels
+	// phone number validation using reflection
+	// format html in html template
 
-	// Todo: generate verify email link
-	// and wait for it in the email routine with channels
+	// try to send user successfully created
+	// and email verification
+	// in a different go routine (concurrency)
+	go func(callBackURL string) {
+		// random email verification token
+		randomString := utils.RandGenerator()
 
-	// email subject
-	subject := "Welcome to www.muguku.co.ke! Confirm Your Email"
+		if randomString == "" {
+			// log for the backend
+			log.Println("ResolveRegisterUser: Anonymous func: error generating random string")
+		}
 
-	// content (in html)
-	emailContent := "<strong>You're on your way! Let's confirm your email address. By clicking on the following link, you are confirming your email address. Confirm Email Address</strong>"
+		// composed random verification token
+		var randomVerifyToken string
 
-	// try to send the email in a different go routine (concurrency)
-	go emails.SendEmail(newUser.Email, subject, emailContent)
+		// check if callback url ends with a forward slash
+		// e.g localhost:3000/
+		// and append if not
+		if strings.HasSuffix(callBackURL, "/") {
+			randomVerifyToken = callBackURL + randomString
+		} else {
+			randomVerifyToken = callBackURL + "/" + randomString
+		}
+
+		// clickable verification link
+		verifyLink := fmt.Sprintf(`<a href="%v"> Click here to verify your email address.</a> <p> Or copy-paste this link on your browser tab <strong> %v </strong>`, randomVerifyToken, randomVerifyToken)
+
+		// unified html body content
+		emailContent := fmt.Sprintf(`<p>You're on your way! Let's confirm your email address. By clicking on the following link, you are confirming your email address.</p> %v`, verifyLink)
+
+		// email subject
+		subject := "Welcome to www.muguku.co.ke! Confirm Your Email"
+
+		// try to send the email in a different go routine
+		go emails.SendEmail(newUser.Email, subject, emailContent)
+
+	}(newUser.EmailVerificationCallBackURL) // self invoke
 
 	// if everything goes right return created object
 	return &RegisterUserPayload{
