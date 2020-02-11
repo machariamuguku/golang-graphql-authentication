@@ -367,6 +367,7 @@ input RegisterUserInput {
   email: String!
   phoneNumber: String!
   password: String!
+  emailVerificationCallBackURL: String!
 }
 
 # a field validation errors object
@@ -2667,6 +2668,12 @@ func (ec *executionContext) unmarshalInputRegisterUserInput(ctx context.Context,
 		case "password":
 			var err error
 			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "emailVerificationCallBackURL":
+			var err error
+			it.EmailVerificationCallBackURL, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

@@ -21,11 +21,12 @@ type LoginUserPayload struct {
 }
 
 type RegisterUserInput struct {
-	FirstName   string `json:"firstName"`
-	LastName    string `json:"lastName"`
-	Email       string `json:"email"`
-	PhoneNumber string `json:"phoneNumber"`
-	Password    string `json:"password"`
+	FirstName                    string `json:"firstName"`
+	LastName                     string `json:"lastName"`
+	Email                        string `json:"email"`
+	PhoneNumber                  string `json:"phoneNumber"`
+	Password                     string `json:"password"`
+	EmailVerificationCallBackURL string `json:"emailVerificationCallBackURL"`
 }
 
 type RegisterUserPayload struct {

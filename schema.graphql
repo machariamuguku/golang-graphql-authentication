@@ -16,6 +16,7 @@ input RegisterUserInput {
   email: String!
   phoneNumber: String!
   password: String!
+  emailVerificationCallBackURL: String!
 }
 
 # a field validation errors object
