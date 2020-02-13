@@ -73,11 +73,13 @@ type ComplexityRoot struct {
 	}
 
 	User struct {
-		Email       func(childComplexity int) int
-		FirstName   func(childComplexity int) int
-		ID          func(childComplexity int) int
-		LastName    func(childComplexity int) int
-		PhoneNumber func(childComplexity int) int
+		Email           func(childComplexity int) int
+		FirstName       func(childComplexity int) int
+		ID              func(childComplexity int) int
+		IsEmailVerified func(childComplexity int) int
+		IsPhoneVerified func(childComplexity int) int
+		LastName        func(childComplexity int) int
+		PhoneNumber     func(childComplexity int) int
 	}
 
 	UserPayload struct {
@@ -252,6 +254,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.ID(childComplexity), true
 
+	case "User.isEmailVerified":
+		if e.complexity.User.IsEmailVerified == nil {
+			break
+		}
+
+		return e.complexity.User.IsEmailVerified(childComplexity), true
+
+	case "User.isPhoneVerified":
+		if e.complexity.User.IsPhoneVerified == nil {
+			break
+		}
+
+		return e.complexity.User.IsPhoneVerified(childComplexity), true
+
 	case "User.lastName":
 		if e.complexity.User.LastName == nil {
 			break
@@ -358,6 +374,8 @@ type User {
   lastName: String!
   email: String!
   phoneNumber: String!
+  isEmailVerified: Boolean!
+  isPhoneVerified: Boolean!
 }
 
 # user registration input
@@ -1341,6 +1359,80 @@ func (ec *executionContext) _User_phoneNumber(ctx context.Context, field graphql
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_isEmailVerified(ctx context.Context, field graphql.CollectedField, obj *User) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsEmailVerified, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _User_isPhoneVerified(ctx context.Context, field graphql.CollectedField, obj *User) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "User",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsPhoneVerified, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _UserPayload_user(ctx context.Context, field graphql.CollectedField, obj *UserPayload) (ret graphql.Marshaler) {
@@ -2936,6 +3028,16 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "phoneNumber":
 			out.Values[i] = ec._User_phoneNumber(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "isEmailVerified":
+			out.Values[i] = ec._User_isEmailVerified(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "isPhoneVerified":
+			out.Values[i] = ec._User_isPhoneVerified(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

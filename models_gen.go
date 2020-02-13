@@ -38,11 +38,13 @@ type RegisterUserPayload struct {
 }
 
 type User struct {
-	ID          string `json:"id"`
-	FirstName   string `json:"firstName"`
-	LastName    string `json:"lastName"`
-	Email       string `json:"email"`
-	PhoneNumber string `json:"phoneNumber"`
+	ID              string `json:"id"`
+	FirstName       string `json:"firstName"`
+	LastName        string `json:"lastName"`
+	Email           string `json:"email"`
+	PhoneNumber     string `json:"phoneNumber"`
+	IsEmailVerified bool   `json:"isEmailVerified"`
+	IsPhoneVerified bool   `json:"isPhoneVerified"`
 }
 
 type UserPayload struct {
