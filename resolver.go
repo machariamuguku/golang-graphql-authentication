@@ -294,11 +294,91 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 type queryResolver struct{ *Resolver }
 
 func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*LoginUserPayload, error) {
-	panic("not implemented")
-}
-func (r *queryResolver) Users(ctx context.Context) ([]*UserPayload, error) {
-	panic("not implemented")
-}
-func (r *queryResolver) User(ctx context.Context, id string) (*UserPayload, error) {
-	panic("not implemented")
+	// Todo: modularise the validation function
+
+	// validate input fields
+
+	// english locale
+	en := en.New()
+	// universal english translator
+	uni = ut.New(en, en)
+
+	// translator for english
+	// this is usually know/extracted from http 'Accept-Language' header
+	trans, _ := uni.GetTranslator("en")
+
+	// initialize validate v10 instance
+	validate = validator.New()
+
+	en_translations.RegisterDefaultTranslations(validate, trans)
+
+	// validate against the validation struct
+	// returns nil or ValidationErrors ( []FieldError )
+	ValidationErr := validate.Struct(&models.ValidateLoginInput{
+		Email:    input.Email,
+		Password: input.Password,
+	})
+
+	// if validation errors
+	if ValidationErr != nil {
+
+		// init a slice of field errors
+		var errorsSlice []*FieldErrors
+
+		errs := ValidationErr.(validator.ValidationErrors)
+
+		//  translate each error at a time.
+		for _, e := range errs {
+			// model the resultant errors to the expected (fieldErrors struct)
+			errors := &FieldErrors{
+				Field: e.Field(),
+				Error: e.Translate(trans),
+			}
+			// append to the errorsSlice
+			errorsSlice = append(errorsSlice, errors)
+		}
+
+		// return with validation error
+		return &LoginUserPayload{
+			User:        nil,
+			JwtToken:    nil,
+			StatusCode:  400,
+			Message:     "Input validation errors!",
+			FieldErrors: errorsSlice,
+		}, nil
+
+	}
+
+	// if no validation errors
+	// initialize the db instance
+	db := r.DB
+
+	user := &models.GormUser{}
+
+	// check if user exists
+	if db.Where("email = ?", input.Email).First(&user).RecordNotFound() {
+		// if they do not return error
+		return &LoginUserPayload{
+			User:        nil,
+			JwtToken:    nil,
+			StatusCode:  400,
+			Message:     "No user with those credentials exist!",
+			FieldErrors: nil,
+		}, nil
+	}
+
+	// Compare the stored hashed password, with the hashed version of the password that was received
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
+		// If the two passwords don't match, return a 404 status and error
+		return &LoginUserPayload{
+			User:        nil,
+			JwtToken:    nil,
+			StatusCode:  400,
+			Message:     "No user with those credentials exist!",
+			FieldErrors: nil,
+		}, nil
+	}
+
+	return nil, nil
+
 }
