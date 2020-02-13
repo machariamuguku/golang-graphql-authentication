@@ -39,7 +39,6 @@ type RegisterUserPayload {
 # user login input
 input LoginUserInput {
   email: String!
-  phoneNumber: String!
   password: String!
 }
 
@@ -49,22 +48,12 @@ type LoginUserPayload {
   jwtToken: String
   statusCode: Int!
   message: String!
+  fieldErrors: [FieldErrors]!
 }
-
-# request user payload
-type UserPayload {
-  user: User!
-  statusCode: Int!
-  message: String!
-}
-
-# scalar Time
 
 # All queries
 type Query {
   loginUser(input: LoginUserInput!): LoginUserPayload!
-  users: [UserPayload!]!
-  user(id: String!): UserPayload!
 }
 
 # All mutations
