@@ -6,7 +6,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-// GormUser : for postgres
+// GormUser : structure for postgres user table
 type GormUser struct {
 	ID                           string `gorm:"column:id; PRIMARY_KEY" json:"id"`
 	FirstName                    string `json:"firstName" validate:"required"`
@@ -15,6 +15,9 @@ type GormUser struct {
 	PhoneNumber                  string `json:"phoneNumber" validate:"required"`
 	Password                     string `json:"password" validate:"required"`
 	EmailVerificationCallBackURL string `json:"emailVerificationCallBackURL" validate:"required"`
+	IsEmailVerified              bool   `json:"isEmailVerified"`
+	IsPhoneVerified              bool   `json:"isPhoneVerified"`
+	EmailVerificationToken       string `json:"emailVerificationToken"`
 	CreatedAt                    time.Time
 	UpdatedAt                    time.Time
 	DeletedAt                    *time.Time `sql:"index"`
