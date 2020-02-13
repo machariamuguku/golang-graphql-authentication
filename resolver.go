@@ -224,7 +224,8 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 	}
 
 	// Todo:
-	// wait for `random verification string` in the email routine with channels
+	// wait for `email verification string` in the email routine with channels
+	// save the verification token in db to verify against
 	// phone number validation using reflection
 	// format html in html template
 
@@ -232,28 +233,34 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 	// and email verification
 	// in a different go routine (concurrency)
 	go func(callBackURL string) {
-		// random email verification token
-		randomString := utils.RandGenerator()
+		// email verification token
+		EmailVerificationToken := utils.RandGenerator()
 
-		if randomString == "" {
+		if EmailVerificationToken == "" {
 			// log for the backend
-			log.Println("ResolveRegisterUser: Anonymous func: error generating random string")
+			log.Println("ResolveRegisterUser: Anonymous func: error generating email string")
 		}
 
-		// composed random verification token
-		var randomVerifyToken string
+		// save this string to the db (update)
+		if err := db.Model(&models.GormUser{}).Where("email = ?", input.Email).Update("email_verification_token", EmailVerificationToken).Error; err != nil {
+			// error handling
+			log.Println("ResolveRegisterUser: Anonymous func: error saving email_verification_token string")
+		}
+
+		// composed email verification token
+		var EmailVerificationLink string
 
 		// check if callback url ends with a forward slash
 		// e.g localhost:3000/
 		// and append if not
 		if strings.HasSuffix(callBackURL, "/") {
-			randomVerifyToken = callBackURL + randomString
+			EmailVerificationLink = callBackURL + EmailVerificationToken
 		} else {
-			randomVerifyToken = callBackURL + "/" + randomString
+			EmailVerificationLink = callBackURL + "/" + EmailVerificationToken
 		}
 
 		// clickable verification link
-		verifyLink := fmt.Sprintf(`<a href="%v"> Click here to verify your email address.</a> <p> Or copy-paste this link on your browser tab <strong> %v </strong>`, randomVerifyToken, randomVerifyToken)
+		verifyLink := fmt.Sprintf(`<a href="%v"> Click here to verify your email address.</a> <p> Or copy-paste this link on your browser tab <strong> %v </strong>`, EmailVerificationLink, EmailVerificationLink)
 
 		// unified html body content
 		emailContent := fmt.Sprintf(`<p>You're on your way! Let's confirm your email address. By clicking on the following link, you are confirming your email address.</p> %v`, verifyLink)
@@ -269,11 +276,13 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 	// if everything goes right return created object
 	return &RegisterUserPayload{
 		User: &User{
-			ID:          newUser.ID,
-			FirstName:   newUser.FirstName,
-			LastName:    newUser.LastName,
-			Email:       newUser.Email,
-			PhoneNumber: newUser.PhoneNumber,
+			ID:              newUser.ID,
+			FirstName:       newUser.FirstName,
+			LastName:        newUser.LastName,
+			Email:           newUser.Email,
+			PhoneNumber:     newUser.PhoneNumber,
+			IsEmailVerified: newUser.IsEmailVerified,
+			IsPhoneVerified: newUser.IsPhoneVerified,
 		},
 		JwtToken:    &jwtToken,
 		StatusCode:  200,
