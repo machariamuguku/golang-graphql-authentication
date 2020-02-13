@@ -29,3 +29,9 @@ type Claims struct {
 	UserID string `json:"userid"`
 	jwt.StandardClaims
 }
+
+// ValidateLoginInput : login validation struct
+type ValidateLoginInput struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required"`
+}
