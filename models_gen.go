@@ -8,16 +8,16 @@ type FieldErrors struct {
 }
 
 type LoginUserInput struct {
-	Email       string `json:"email"`
-	PhoneNumber string `json:"phoneNumber"`
-	Password    string `json:"password"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type LoginUserPayload struct {
-	User       *User   `json:"user"`
-	JwtToken   *string `json:"jwtToken"`
-	StatusCode int     `json:"statusCode"`
-	Message    string  `json:"message"`
+	User        *User          `json:"user"`
+	JwtToken    *string        `json:"jwtToken"`
+	StatusCode  int            `json:"statusCode"`
+	Message     string         `json:"message"`
+	FieldErrors []*FieldErrors `json:"fieldErrors"`
 }
 
 type RegisterUserInput struct {
@@ -45,10 +45,4 @@ type User struct {
 	PhoneNumber     string `json:"phoneNumber"`
 	IsEmailVerified bool   `json:"isEmailVerified"`
 	IsPhoneVerified bool   `json:"isPhoneVerified"`
-}
-
-type UserPayload struct {
-	User       *User  `json:"user"`
-	StatusCode int    `json:"statusCode"`
-	Message    string `json:"message"`
 }

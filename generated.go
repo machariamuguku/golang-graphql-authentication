@@ -48,10 +48,11 @@ type ComplexityRoot struct {
 	}
 
 	LoginUserPayload struct {
-		JwtToken   func(childComplexity int) int
-		Message    func(childComplexity int) int
-		StatusCode func(childComplexity int) int
-		User       func(childComplexity int) int
+		FieldErrors func(childComplexity int) int
+		JwtToken    func(childComplexity int) int
+		Message     func(childComplexity int) int
+		StatusCode  func(childComplexity int) int
+		User        func(childComplexity int) int
 	}
 
 	Mutation struct {
@@ -60,8 +61,6 @@ type ComplexityRoot struct {
 
 	Query struct {
 		LoginUser func(childComplexity int, input LoginUserInput) int
-		User      func(childComplexity int, id string) int
-		Users     func(childComplexity int) int
 	}
 
 	RegisterUserPayload struct {
@@ -81,12 +80,6 @@ type ComplexityRoot struct {
 		LastName        func(childComplexity int) int
 		PhoneNumber     func(childComplexity int) int
 	}
-
-	UserPayload struct {
-		Message    func(childComplexity int) int
-		StatusCode func(childComplexity int) int
-		User       func(childComplexity int) int
-	}
 }
 
 type MutationResolver interface {
@@ -94,8 +87,6 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	LoginUser(ctx context.Context, input LoginUserInput) (*LoginUserPayload, error)
-	Users(ctx context.Context) ([]*UserPayload, error)
-	User(ctx context.Context, id string) (*UserPayload, error)
 }
 
 type executableSchema struct {
@@ -126,6 +117,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FieldErrors.Field(childComplexity), true
+
+	case "LoginUserPayload.fieldErrors":
+		if e.complexity.LoginUserPayload.FieldErrors == nil {
+			break
+		}
+
+		return e.complexity.LoginUserPayload.FieldErrors(childComplexity), true
 
 	case "LoginUserPayload.jwtToken":
 		if e.complexity.LoginUserPayload.JwtToken == nil {
@@ -178,25 +176,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.LoginUser(childComplexity, args["input"].(LoginUserInput)), true
-
-	case "Query.user":
-		if e.complexity.Query.User == nil {
-			break
-		}
-
-		args, err := ec.field_Query_user_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.User(childComplexity, args["id"].(string)), true
-
-	case "Query.users":
-		if e.complexity.Query.Users == nil {
-			break
-		}
-
-		return e.complexity.Query.Users(childComplexity), true
 
 	case "RegisterUserPayload.fieldErrors":
 		if e.complexity.RegisterUserPayload.FieldErrors == nil {
@@ -281,27 +260,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.PhoneNumber(childComplexity), true
-
-	case "UserPayload.message":
-		if e.complexity.UserPayload.Message == nil {
-			break
-		}
-
-		return e.complexity.UserPayload.Message(childComplexity), true
-
-	case "UserPayload.statusCode":
-		if e.complexity.UserPayload.StatusCode == nil {
-			break
-		}
-
-		return e.complexity.UserPayload.StatusCode(childComplexity), true
-
-	case "UserPayload.user":
-		if e.complexity.UserPayload.User == nil {
-			break
-		}
-
-		return e.complexity.UserPayload.User(childComplexity), true
 
 	}
 	return 0, false
@@ -406,7 +364,6 @@ type RegisterUserPayload {
 # user login input
 input LoginUserInput {
   email: String!
-  phoneNumber: String!
   password: String!
 }
 
@@ -416,22 +373,12 @@ type LoginUserPayload {
   jwtToken: String
   statusCode: Int!
   message: String!
+  fieldErrors: [FieldErrors]!
 }
-
-# request user payload
-type UserPayload {
-  user: User!
-  statusCode: Int!
-  message: String!
-}
-
-# scalar Time
 
 # All queries
 type Query {
   loginUser(input: LoginUserInput!): LoginUserPayload!
-  users: [UserPayload!]!
-  user(id: String!): UserPayload!
 }
 
 # All mutations
@@ -484,20 +431,6 @@ func (ec *executionContext) field_Query_loginUser_args(ctx context.Context, rawA
 		}
 	}
 	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_user_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["id"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["id"] = arg0
 	return args, nil
 }
 
@@ -753,6 +686,43 @@ func (ec *executionContext) _LoginUserPayload_message(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _LoginUserPayload_fieldErrors(ctx context.Context, field graphql.CollectedField, obj *LoginUserPayload) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "LoginUserPayload",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FieldErrors, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*FieldErrors)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNFieldErrors2ᚕᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐFieldErrors(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_registerUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	ctx = ec.Tracer.StartFieldExecution(ctx, field)
 	defer func() {
@@ -839,87 +809,6 @@ func (ec *executionContext) _Query_loginUser(ctx context.Context, field graphql.
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNLoginUserPayload2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐLoginUserPayload(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_users(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Users(rctx)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.([]*UserPayload)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNUserPayload2ᚕᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐUserPayloadᚄ(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Query_user(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "Query",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_user_args(ctx, rawArgs)
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	rctx.Args = args
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().User(rctx, args["id"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*UserPayload)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNUserPayload2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐUserPayload(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1433,117 +1322,6 @@ func (ec *executionContext) _User_isPhoneVerified(ctx context.Context, field gra
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _UserPayload_user(ctx context.Context, field graphql.CollectedField, obj *UserPayload) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "UserPayload",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.User, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(*User)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNUser2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐUser(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _UserPayload_statusCode(ctx context.Context, field graphql.CollectedField, obj *UserPayload) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "UserPayload",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.StatusCode, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(int)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNInt2int(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _UserPayload_message(ctx context.Context, field graphql.CollectedField, obj *UserPayload) (ret graphql.Marshaler) {
-	ctx = ec.Tracer.StartFieldExecution(ctx, field)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-		ec.Tracer.EndFieldExecution(ctx)
-	}()
-	rctx := &graphql.ResolverContext{
-		Object:   "UserPayload",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-	ctx = graphql.WithResolverContext(ctx, rctx)
-	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Message, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !ec.HasError(rctx) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	rctx.Result = res
-	ctx = ec.Tracer.StartFieldChildExecution(ctx)
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2709,12 +2487,6 @@ func (ec *executionContext) unmarshalInputLoginUserInput(ctx context.Context, ob
 			if err != nil {
 				return it, err
 			}
-		case "phoneNumber":
-			var err error
-			it.PhoneNumber, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "password":
 			var err error
 			it.Password, err = ec.unmarshalNString2string(ctx, v)
@@ -2840,6 +2612,11 @@ func (ec *executionContext) _LoginUserPayload(ctx context.Context, sel ast.Selec
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "fieldErrors":
+			out.Values[i] = ec._LoginUserPayload_fieldErrors(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2906,34 +2683,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_loginUser(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "users":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_users(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
-				return res
-			})
-		case "user":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_user(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -3038,43 +2787,6 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "isPhoneVerified":
 			out.Values[i] = ec._User_isPhoneVerified(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var userPayloadImplementors = []string{"UserPayload"}
-
-func (ec *executionContext) _UserPayload(ctx context.Context, sel ast.SelectionSet, obj *UserPayload) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.RequestContext, sel, userPayloadImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("UserPayload")
-		case "user":
-			out.Values[i] = ec._UserPayload_user(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "statusCode":
-			out.Values[i] = ec._UserPayload_statusCode(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "message":
-			out.Values[i] = ec._UserPayload_message(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3461,71 +3173,6 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNUser2githubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐUser(ctx context.Context, sel ast.SelectionSet, v User) graphql.Marshaler {
-	return ec._User(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐUser(ctx context.Context, sel ast.SelectionSet, v *User) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._User(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalNUserPayload2githubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐUserPayload(ctx context.Context, sel ast.SelectionSet, v UserPayload) graphql.Marshaler {
-	return ec._UserPayload(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNUserPayload2ᚕᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐUserPayloadᚄ(ctx context.Context, sel ast.SelectionSet, v []*UserPayload) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		rctx := &graphql.ResolverContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithResolverContext(ctx, rctx)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNUserPayload2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐUserPayload(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-	return ret
-}
-
-func (ec *executionContext) marshalNUserPayload2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐUserPayload(ctx context.Context, sel ast.SelectionSet, v *UserPayload) graphql.Marshaler {
-	if v == nil {
-		if !ec.HasError(graphql.GetResolverContext(ctx)) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	return ec._UserPayload(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
