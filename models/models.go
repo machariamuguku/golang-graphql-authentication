@@ -8,16 +8,16 @@ import (
 
 // GormUser : structure for postgres user table
 type GormUser struct {
-	ID                           string `gorm:"column:id; PRIMARY_KEY" json:"id"`
+	ID                           string `json:"id" gorm:"column:id;PRIMARY_KEY"`
 	FirstName                    string `json:"firstName" validate:"required"`
 	LastName                     string `json:"lastName" validate:"required"`
-	Email                        string `gorm:"type:varchar(100);unique_index" json:"email" validate:"required,email"`
+	Email                        string `json:"email" validate:"required,email" gorm:"type:varchar(100);unique_index"`
 	PhoneNumber                  string `json:"phoneNumber" validate:"required"`
 	Password                     string `json:"password" validate:"required"`
 	EmailVerificationCallBackURL string `json:"emailVerificationCallBackURL" validate:"required"`
 	IsEmailVerified              bool   `json:"isEmailVerified"`
 	IsPhoneVerified              bool   `json:"isPhoneVerified"`
-	EmailVerificationToken       string `json:"emailVerificationToken"`
+	EmailVerificationToken       string `json:"emailVerificationToken" gorm:"unique"`
 	CreatedAt                    time.Time
 	UpdatedAt                    time.Time
 	DeletedAt                    *time.Time `sql:"index"`
