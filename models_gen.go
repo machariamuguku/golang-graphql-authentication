@@ -2,6 +2,10 @@
 
 package golang_graphql_authentication
 
+import (
+	"time"
+)
+
 type FieldErrors struct {
 	Field string `json:"field"`
 	Error string `json:"error"`
@@ -38,11 +42,13 @@ type RegisterUserPayload struct {
 }
 
 type User struct {
-	ID              string `json:"id"`
-	FirstName       string `json:"firstName"`
-	LastName        string `json:"lastName"`
-	Email           string `json:"email"`
-	PhoneNumber     string `json:"phoneNumber"`
-	IsEmailVerified bool   `json:"isEmailVerified"`
-	IsPhoneVerified bool   `json:"isPhoneVerified"`
+	ID              string    `json:"id"`
+	FirstName       string    `json:"firstName"`
+	LastName        string    `json:"lastName"`
+	Email           string    `json:"email"`
+	PhoneNumber     string    `json:"phoneNumber"`
+	IsEmailVerified bool      `json:"isEmailVerified"`
+	IsPhoneVerified bool      `json:"isPhoneVerified"`
+	CreatedAt       time.Time `json:"createdAt"`
+	UpdatedAt       time.Time `json:"updatedAt"`
 }
