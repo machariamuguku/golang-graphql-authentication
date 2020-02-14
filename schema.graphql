@@ -9,7 +9,12 @@ type User {
   phoneNumber: String!
   isEmailVerified: Boolean!
   isPhoneVerified: Boolean!
+  createdAt: Time!
+  updatedAt: Time!
 }
+
+# time scaler import
+scalar Time
 
 # user registration input
 input RegisterUserInput {
