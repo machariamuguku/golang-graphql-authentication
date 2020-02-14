@@ -283,6 +283,8 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 			PhoneNumber:     newUser.PhoneNumber,
 			IsEmailVerified: newUser.IsEmailVerified,
 			IsPhoneVerified: newUser.IsPhoneVerified,
+			CreatedAt:       newUser.CreatedAt,
+			UpdatedAt:       newUser.UpdatedAt,
 		},
 		JwtToken:    &jwtToken,
 		StatusCode:  200,
@@ -379,6 +381,66 @@ func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*L
 		}, nil
 	}
 
-	return nil, nil
+	// if passwords match
+	// generate jwt token
+
+	// get JWT Secret from .env
+	jwtSecret := os.Getenv("JWT_SECRET")
+
+	// if it returns an empty key
+	if jwtSecret == "" {
+		// log for the backend
+		log.Printf("ResolveLoginUser: jwt secret returned empty")
+		// then set another placeholder jwt secret
+		jwtSecret = "a_very_!@#$%^&_secret"
+	}
+
+	// Create the JWT key used to create the jwt signature
+	var jwtKey = []byte(jwtSecret)
+
+	// Declare the expiration time of the token
+	// 5 minutes
+	expirationTime := time.Now().Add(5 * time.Minute)
+
+	// Create the JWT claims (jwt body)
+	// with username, issued at time and expiry time in unix milliseconds
+	claims := &models.Claims{
+		UserID: user.ID,
+		StandardClaims: jwt.StandardClaims{
+			ExpiresAt: expirationTime.Unix(),
+			IssuedAt:  time.Now().Unix(),
+		},
+	}
+
+	// Declare the token with the algorithm used for signing, and the claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Create the JWT string (sign)
+	jwtToken, jwtErr := token.SignedString(jwtKey)
+	if jwtErr != nil {
+		// If there is an error creating the JWT
+		// log the error for the backend
+		log.Printf("ResolveLoginUser: error saving user: %v", jwtErr)
+
+	}
+
+	// if everything goes right return created object
+	return &LoginUserPayload{
+		User: &User{
+			ID:              user.ID,
+			FirstName:       user.FirstName,
+			LastName:        user.LastName,
+			Email:           user.Email,
+			PhoneNumber:     user.PhoneNumber,
+			IsEmailVerified: user.IsEmailVerified,
+			IsPhoneVerified: user.IsPhoneVerified,
+			CreatedAt:       user.CreatedAt,
+			UpdatedAt:       user.UpdatedAt,
+		},
+		JwtToken:    &jwtToken,
+		StatusCode:  200,
+		Message:     "User login successful!",
+		FieldErrors: nil,
+	}, nil
 
 }
