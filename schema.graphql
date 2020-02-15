@@ -56,6 +56,12 @@ type LoginUserPayload {
   fieldErrors: [FieldErrors]!
 }
 
+# verify email payload
+type VerifyEmailPayload {
+  statusCode: Int!
+  message: String!
+}
+
 # All queries
 type Query {
   loginUser(input: LoginUserInput!): LoginUserPayload!
@@ -64,4 +70,5 @@ type Query {
 # All mutations
 type Mutation {
   registerUser(input: RegisterUserInput!): RegisterUserPayload!
+  verifyEmail(emailVerificationToken: String!): VerifyEmailPayload!
 }
