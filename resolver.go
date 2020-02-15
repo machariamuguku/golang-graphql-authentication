@@ -31,8 +31,7 @@ var (
 )
 
 type Resolver struct {
-	users []*User
-	DB    *db.DB
+	DB *db.DB
 }
 
 func (r *Resolver) Mutation() MutationResolver {
@@ -45,7 +44,7 @@ func (r *Resolver) Query() QueryResolver {
 
 type mutationResolver struct{ *Resolver }
 
-func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*RegisterUserPayload, error) {
+func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*RegisterUserPayload, error) {
 
 	// validate input fields
 
@@ -108,8 +107,11 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 	// initialize the db instance
 	db := r.DB
 
+	// pointer to base user model
+	user := &models.GormUser{}
+
 	// check if user already exists
-	if !db.Where("email = ?", input.Email).First(&models.GormUser{}).RecordNotFound() {
+	if !db.Where("email = ?", input.Email).First(&user).RecordNotFound() {
 		// if they do return user already exists
 		return &RegisterUserPayload{
 			User:        nil,
@@ -242,7 +244,7 @@ func (r *Resolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*
 		}
 
 		// save this string to the db (update)
-		if err := db.Model(&models.GormUser{}).Where("email = ?", input.Email).Update("email_verification_token", EmailVerificationToken).Error; err != nil {
+		if err := db.Model(&user).Where("email = ?", input.Email).Update("email_verification_token", EmailVerificationToken).Error; err != nil {
 			// error handling
 			log.Println("ResolveRegisterUser: Anonymous func: error saving email_verification_token string")
 		}
@@ -443,4 +445,51 @@ func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*L
 		FieldErrors: nil,
 	}, nil
 
+}
+
+func (r *mutationResolver) VerifyEmail(ctx context.Context, emailVerificationToken string) (*VerifyEmailPayload, error) {
+
+	// validate for empty or random string of code
+	// the email verification token func generates a 62 characters long string
+	if len([]rune(emailVerificationToken)) != 62 {
+		return &VerifyEmailPayload{
+			StatusCode: 400,
+			Message:    "bad request, check your input!",
+		}, nil
+	}
+
+	// if no validation errors
+	// initialize the db instance
+	db := r.DB
+
+	user := &models.GormUser{}
+
+	// check if user with that verification token exists
+	if db.Where("email_verification_token = ?", emailVerificationToken).First(&user).RecordNotFound() {
+		// if they don't return error
+		return &VerifyEmailPayload{
+			StatusCode: 400,
+			Message:    "bad request, check your input!",
+		}, nil
+	}
+
+	// check if user is already verified
+	if user.IsEmailVerified == true {
+		// if yes return message
+		return &VerifyEmailPayload{
+			StatusCode: 400,
+			Message:    "This email is already verified!",
+		}, nil
+	}
+
+	// if not verify them (update is email verified flag to true)
+	if err := db.Model(&user).Where("email_verification_token = ?", emailVerificationToken).Update("is_email_verified", true).Error; err != nil {
+		// error handling
+		log.Println("ResolveVerifyEmail: error changing email verification to true")
+	}
+
+	return &VerifyEmailPayload{
+		StatusCode: 200,
+		Message:    "Email successfully verified!",
+	}, nil
 }
