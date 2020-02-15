@@ -13,7 +13,7 @@ type GormUser struct {
 	LastName                     string `json:"lastName" validate:"required"`
 	Email                        string `json:"email" validate:"required,email" gorm:"type:varchar(100);unique_index"`
 	PhoneNumber                  string `json:"phoneNumber" validate:"required"`
-	Password                     string `json:"password" validate:"required"`
+	Password                     string `json:"password" validate:"required,min=8"`
 	EmailVerificationCallBackURL string `json:"emailVerificationCallBackURL" validate:"required"`
 	IsEmailVerified              bool   `json:"isEmailVerified"`
 	IsPhoneVerified              bool   `json:"isPhoneVerified"`
