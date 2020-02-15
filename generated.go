@@ -58,6 +58,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		RegisterUser func(childComplexity int, input RegisterUserInput) int
+		VerifyEmail  func(childComplexity int, emailVerificationToken string) int
 	}
 
 	Query struct {
@@ -83,10 +84,16 @@ type ComplexityRoot struct {
 		PhoneNumber     func(childComplexity int) int
 		UpdatedAt       func(childComplexity int) int
 	}
+
+	VerifyEmailPayload struct {
+		Message    func(childComplexity int) int
+		StatusCode func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
 	RegisterUser(ctx context.Context, input RegisterUserInput) (*RegisterUserPayload, error)
+	VerifyEmail(ctx context.Context, emailVerificationToken string) (*VerifyEmailPayload, error)
 }
 type QueryResolver interface {
 	LoginUser(ctx context.Context, input LoginUserInput) (*LoginUserPayload, error)
@@ -167,6 +174,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.RegisterUser(childComplexity, args["input"].(RegisterUserInput)), true
+
+	case "Mutation.verifyEmail":
+		if e.complexity.Mutation.VerifyEmail == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_verifyEmail_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.VerifyEmail(childComplexity, args["emailVerificationToken"].(string)), true
 
 	case "Query.loginUser":
 		if e.complexity.Query.LoginUser == nil {
@@ -277,6 +296,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.User.UpdatedAt(childComplexity), true
+
+	case "VerifyEmailPayload.message":
+		if e.complexity.VerifyEmailPayload.Message == nil {
+			break
+		}
+
+		return e.complexity.VerifyEmailPayload.Message(childComplexity), true
+
+	case "VerifyEmailPayload.statusCode":
+		if e.complexity.VerifyEmailPayload.StatusCode == nil {
+			break
+		}
+
+		return e.complexity.VerifyEmailPayload.StatusCode(childComplexity), true
 
 	}
 	return 0, false
@@ -398,6 +431,12 @@ type LoginUserPayload {
   fieldErrors: [FieldErrors]!
 }
 
+# verify email payload
+type VerifyEmailPayload {
+  statusCode: Int!
+  message: String!
+}
+
 # All queries
 type Query {
   loginUser(input: LoginUserInput!): LoginUserPayload!
@@ -406,6 +445,7 @@ type Query {
 # All mutations
 type Mutation {
   registerUser(input: RegisterUserInput!): RegisterUserPayload!
+  verifyEmail(emailVerificationToken: String!): VerifyEmailPayload!
 }
 `},
 )
@@ -425,6 +465,20 @@ func (ec *executionContext) field_Mutation_registerUser_args(ctx context.Context
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_verifyEmail_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["emailVerificationToken"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["emailVerificationToken"] = arg0
 	return args, nil
 }
 
@@ -787,6 +841,50 @@ func (ec *executionContext) _Mutation_registerUser(ctx context.Context, field gr
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNRegisterUserPayload2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐRegisterUserPayload(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_verifyEmail(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_verifyEmail_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().VerifyEmail(rctx, args["emailVerificationToken"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*VerifyEmailPayload)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNVerifyEmailPayload2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐVerifyEmailPayload(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_loginUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1418,6 +1516,80 @@ func (ec *executionContext) _User_updatedAt(ctx context.Context, field graphql.C
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VerifyEmailPayload_statusCode(ctx context.Context, field graphql.CollectedField, obj *VerifyEmailPayload) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "VerifyEmailPayload",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StatusCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VerifyEmailPayload_message(ctx context.Context, field graphql.CollectedField, obj *VerifyEmailPayload) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "VerifyEmailPayload",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
@@ -2744,6 +2916,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "verifyEmail":
+			out.Values[i] = ec._Mutation_verifyEmail(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2893,6 +3070,38 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "updatedAt":
 			out.Values[i] = ec._User_updatedAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var verifyEmailPayloadImplementors = []string{"VerifyEmailPayload"}
+
+func (ec *executionContext) _VerifyEmailPayload(ctx context.Context, sel ast.SelectionSet, obj *VerifyEmailPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, verifyEmailPayloadImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VerifyEmailPayload")
+		case "statusCode":
+			out.Values[i] = ec._VerifyEmailPayload_statusCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "message":
+			out.Values[i] = ec._VerifyEmailPayload_message(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3293,6 +3502,20 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNVerifyEmailPayload2githubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐVerifyEmailPayload(ctx context.Context, sel ast.SelectionSet, v VerifyEmailPayload) graphql.Marshaler {
+	return ec._VerifyEmailPayload(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNVerifyEmailPayload2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐVerifyEmailPayload(ctx context.Context, sel ast.SelectionSet, v *VerifyEmailPayload) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._VerifyEmailPayload(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

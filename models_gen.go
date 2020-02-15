@@ -52,3 +52,8 @@ type User struct {
 	CreatedAt       time.Time `json:"createdAt"`
 	UpdatedAt       time.Time `json:"updatedAt"`
 }
+
+type VerifyEmailPayload struct {
+	StatusCode int    `json:"statusCode"`
+	Message    string `json:"message"`
+}
