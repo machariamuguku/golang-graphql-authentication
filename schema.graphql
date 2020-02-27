@@ -23,6 +23,8 @@ input RegisterUserInput {
   email: String!
   phoneNumber: String!
   password: String!
+  # make sure it starts with https:// or http://
+  # or it won't be clickable
   emailVerificationCallBackURL: String!
 }
 
@@ -62,6 +64,12 @@ type VerifyEmailPayload {
   message: String!
 }
 
+# verify phone payload
+type VerifyPhonePayload {
+  statusCode: Int!
+  message: String!
+}
+
 # All queries
 type Query {
   loginUser(input: LoginUserInput!): LoginUserPayload!
@@ -71,4 +79,5 @@ type Query {
 type Mutation {
   registerUser(input: RegisterUserInput!): RegisterUserPayload!
   verifyEmail(emailVerificationToken: String!): VerifyEmailPayload!
+  verifyPhone(phoneVerificationToken: String!): VerifyPhonePayload!
 }
