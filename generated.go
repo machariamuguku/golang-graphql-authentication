@@ -59,6 +59,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		RegisterUser func(childComplexity int, input RegisterUserInput) int
 		VerifyEmail  func(childComplexity int, emailVerificationToken string) int
+		VerifyPhone  func(childComplexity int, phoneVerificationToken string) int
 	}
 
 	Query struct {
@@ -89,11 +90,17 @@ type ComplexityRoot struct {
 		Message    func(childComplexity int) int
 		StatusCode func(childComplexity int) int
 	}
+
+	VerifyPhonePayload struct {
+		Message    func(childComplexity int) int
+		StatusCode func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
 	RegisterUser(ctx context.Context, input RegisterUserInput) (*RegisterUserPayload, error)
 	VerifyEmail(ctx context.Context, emailVerificationToken string) (*VerifyEmailPayload, error)
+	VerifyPhone(ctx context.Context, phoneVerificationToken string) (*VerifyPhonePayload, error)
 }
 type QueryResolver interface {
 	LoginUser(ctx context.Context, input LoginUserInput) (*LoginUserPayload, error)
@@ -186,6 +193,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.VerifyEmail(childComplexity, args["emailVerificationToken"].(string)), true
+
+	case "Mutation.verifyPhone":
+		if e.complexity.Mutation.VerifyPhone == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_verifyPhone_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.VerifyPhone(childComplexity, args["phoneVerificationToken"].(string)), true
 
 	case "Query.loginUser":
 		if e.complexity.Query.LoginUser == nil {
@@ -310,6 +329,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.VerifyEmailPayload.StatusCode(childComplexity), true
+
+	case "VerifyPhonePayload.message":
+		if e.complexity.VerifyPhonePayload.Message == nil {
+			break
+		}
+
+		return e.complexity.VerifyPhonePayload.Message(childComplexity), true
+
+	case "VerifyPhonePayload.statusCode":
+		if e.complexity.VerifyPhonePayload.StatusCode == nil {
+			break
+		}
+
+		return e.complexity.VerifyPhonePayload.StatusCode(childComplexity), true
 
 	}
 	return 0, false
@@ -437,6 +470,12 @@ type VerifyEmailPayload {
   message: String!
 }
 
+# verify phone payload
+type VerifyPhonePayload {
+  statusCode: Int!
+  message: String!
+}
+
 # All queries
 type Query {
   loginUser(input: LoginUserInput!): LoginUserPayload!
@@ -446,6 +485,7 @@ type Query {
 type Mutation {
   registerUser(input: RegisterUserInput!): RegisterUserPayload!
   verifyEmail(emailVerificationToken: String!): VerifyEmailPayload!
+  verifyPhone(phoneVerificationToken: String!): VerifyPhonePayload!
 }
 `},
 )
@@ -479,6 +519,20 @@ func (ec *executionContext) field_Mutation_verifyEmail_args(ctx context.Context,
 		}
 	}
 	args["emailVerificationToken"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_verifyPhone_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["phoneVerificationToken"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["phoneVerificationToken"] = arg0
 	return args, nil
 }
 
@@ -885,6 +939,50 @@ func (ec *executionContext) _Mutation_verifyEmail(ctx context.Context, field gra
 	rctx.Result = res
 	ctx = ec.Tracer.StartFieldChildExecution(ctx)
 	return ec.marshalNVerifyEmailPayload2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐVerifyEmailPayload(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_verifyPhone(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_verifyPhone_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().VerifyPhone(rctx, args["phoneVerificationToken"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*VerifyPhonePayload)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNVerifyPhonePayload2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐVerifyPhonePayload(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_loginUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1566,6 +1664,80 @@ func (ec *executionContext) _VerifyEmailPayload_message(ctx context.Context, fie
 	}()
 	rctx := &graphql.ResolverContext{
 		Object:   "VerifyEmailPayload",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VerifyPhonePayload_statusCode(ctx context.Context, field graphql.CollectedField, obj *VerifyPhonePayload) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "VerifyPhonePayload",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StatusCode, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !ec.HasError(rctx) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _VerifyPhonePayload_message(ctx context.Context, field graphql.CollectedField, obj *VerifyPhonePayload) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "VerifyPhonePayload",
 		Field:    field,
 		Args:     nil,
 		IsMethod: false,
@@ -2921,6 +3093,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "verifyPhone":
+			out.Values[i] = ec._Mutation_verifyPhone(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3102,6 +3279,38 @@ func (ec *executionContext) _VerifyEmailPayload(ctx context.Context, sel ast.Sel
 			}
 		case "message":
 			out.Values[i] = ec._VerifyEmailPayload_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var verifyPhonePayloadImplementors = []string{"VerifyPhonePayload"}
+
+func (ec *executionContext) _VerifyPhonePayload(ctx context.Context, sel ast.SelectionSet, obj *VerifyPhonePayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.RequestContext, sel, verifyPhonePayloadImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VerifyPhonePayload")
+		case "statusCode":
+			out.Values[i] = ec._VerifyPhonePayload_statusCode(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "message":
+			out.Values[i] = ec._VerifyPhonePayload_message(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -3516,6 +3725,20 @@ func (ec *executionContext) marshalNVerifyEmailPayload2ᚖgithubᚗcomᚋmachari
 		return graphql.Null
 	}
 	return ec._VerifyEmailPayload(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNVerifyPhonePayload2githubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐVerifyPhonePayload(ctx context.Context, sel ast.SelectionSet, v VerifyPhonePayload) graphql.Marshaler {
+	return ec._VerifyPhonePayload(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNVerifyPhonePayload2ᚖgithubᚗcomᚋmachariamugukuᚋgolangᚑgraphqlᚑauthenticationᚐVerifyPhonePayload(ctx context.Context, sel ast.SelectionSet, v *VerifyPhonePayload) graphql.Marshaler {
+	if v == nil {
+		if !ec.HasError(graphql.GetResolverContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	return ec._VerifyPhonePayload(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {

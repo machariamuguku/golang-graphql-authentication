@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/99designs/gqlgen v0.10.2
+	github.com/AndroidStudyOpenSource/africastalking-go v0.0.0-20190314130914-bdd09087bcbf
 	github.com/Applifier/go-libphonenumber v0.0.0-20161107150900-64e099bc8ad4 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-playground/locales v0.13.0

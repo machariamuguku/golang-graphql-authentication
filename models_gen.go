@@ -57,3 +57,8 @@ type VerifyEmailPayload struct {
 	StatusCode int    `json:"statusCode"`
 	Message    string `json:"message"`
 }
+
+type VerifyPhonePayload struct {
+	StatusCode int    `json:"statusCode"`
+	Message    string `json:"message"`
+}

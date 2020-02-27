@@ -16,6 +16,7 @@ import (
 	"github.com/machariamuguku/golang-graphql-authentication/db"
 	"github.com/machariamuguku/golang-graphql-authentication/emails"
 	"github.com/machariamuguku/golang-graphql-authentication/models"
+	"github.com/machariamuguku/golang-graphql-authentication/sms"
 	"github.com/machariamuguku/golang-graphql-authentication/utils"
 	"golang.org/x/crypto/bcrypt"
 
@@ -142,6 +143,24 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 		}, nil
 	}
 
+	// generate random email verification token
+	EmailVerificationToken := utils.RandEmailCodeGenerator()
+
+	if EmailVerificationToken == "" {
+		// log for the backend
+		log.Println("ResolveRegisterUser: Anonymous func: error generating email string")
+
+		// return an error
+		return &RegisterUserPayload{
+			User:        nil,
+			JwtToken:    nil,
+			StatusCode:  500,
+			Message:     "Server error, try again!",
+			FieldErrors: nil,
+		}, nil
+
+	}
+
 	// format object to save to db
 	newUser := &models.GormUser{
 		ID:                           uuid.String(),
@@ -151,6 +170,7 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 		PhoneNumber:                  input.PhoneNumber,
 		Password:                     input.Password,
 		EmailVerificationCallBackURL: input.EmailVerificationCallBackURL,
+		EmailVerificationToken:       EmailVerificationToken,
 	}
 
 	// hash password
@@ -159,6 +179,14 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 	// if error hashing pass
 	if hashPassErr != nil {
 		log.Printf("ResolveRegisterUser: password hashing error: %v", hashPassErr)
+		// return an error
+		return &RegisterUserPayload{
+			User:        nil,
+			JwtToken:    nil,
+			StatusCode:  500,
+			Message:     "Server error, try again!",
+			FieldErrors: nil,
+		}, nil
 	}
 
 	// re-assign pass to hashed
@@ -192,8 +220,26 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 	if jwtSecret == "" {
 		// log for the backend
 		log.Printf("ResolveRegisterUser: jwt secret returned empty")
-		// then set another placeholder jwt secret
-		jwtSecret = "a_very_!@#$%^&_secret"
+
+		// return but with missing keys
+		return &RegisterUserPayload{
+			User: &User{
+				ID:              newUser.ID,
+				FirstName:       newUser.FirstName,
+				LastName:        newUser.LastName,
+				Email:           newUser.Email,
+				PhoneNumber:     newUser.PhoneNumber,
+				IsEmailVerified: newUser.IsEmailVerified,
+				IsPhoneVerified: newUser.IsPhoneVerified,
+				CreatedAt:       newUser.CreatedAt,
+				UpdatedAt:       newUser.UpdatedAt,
+			},
+			JwtToken:    nil,
+			StatusCode:  200,
+			Message:     "User successfully registered!",
+			FieldErrors: nil,
+		}, nil
+
 	}
 
 	// Create the JWT key used to create the jwt signature
@@ -223,31 +269,38 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 		// log the error for the backend
 		log.Printf("ResolveRegisterUser: error saving user: %v", jwtErr)
 
+		// return but with missing keys
+		return &RegisterUserPayload{
+			User: &User{
+				ID:              newUser.ID,
+				FirstName:       newUser.FirstName,
+				LastName:        newUser.LastName,
+				Email:           newUser.Email,
+				PhoneNumber:     newUser.PhoneNumber,
+				IsEmailVerified: newUser.IsEmailVerified,
+				IsPhoneVerified: newUser.IsPhoneVerified,
+				CreatedAt:       newUser.CreatedAt,
+				UpdatedAt:       newUser.UpdatedAt,
+			},
+			JwtToken:    nil,
+			StatusCode:  200,
+			Message:     "User successfully registered!",
+			FieldErrors: nil,
+		}, nil
+
 	}
 
 	// Todo:
 	// wait for `email verification string` in the email routine with channels
-	// save the verification token in db to verify against
 	// phone number validation using reflection
 	// format html in html template
+	// send the send email fn to the anonymous fn
+	// instead of direct access. pinter maybe?
 
 	// try to send user successfully created
 	// and email verification
 	// in a different go routine (concurrency)
-	go func(callBackURL string) {
-		// email verification token
-		EmailVerificationToken := utils.RandGenerator()
-
-		if EmailVerificationToken == "" {
-			// log for the backend
-			log.Println("ResolveRegisterUser: Anonymous func: error generating email string")
-		}
-
-		// save this string to the db (update)
-		if err := db.Model(&user).Where("email = ?", input.Email).Update("email_verification_token", EmailVerificationToken).Error; err != nil {
-			// error handling
-			log.Println("ResolveRegisterUser: Anonymous func: error saving email_verification_token string")
-		}
+	go func(callBackURL, EmailVerificationToken, firstName string) {
 
 		// composed email verification token
 		var EmailVerificationLink string
@@ -261,19 +314,24 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 			EmailVerificationLink = callBackURL + "/" + EmailVerificationToken
 		}
 
-		// clickable verification link
-		verifyLink := fmt.Sprintf(`<a href="%v"> Click here to verify your email address.</a> <p> Or copy-paste this link on your browser tab <strong> %v </strong>`, EmailVerificationLink, EmailVerificationLink)
+		// basic verification link
+		// to be used if html content fails
+		plainTextContent := fmt.Sprintf(`You're on your way!. Let's confirm your email address. Copy-paste this link on your browser's tab to verify your email: %v`, EmailVerificationLink)
+
+		// compose clickable verification link
+		verifyLink := fmt.Sprintf(`<p><strong><a href="%v" target="_blank" rel="noopener noreferrer"> Click here to verify your email address.</a></strong></p> <p>Or copy-paste the following link on your browser's tab</p> <p><strong><code> %v </code></strong></p>`, EmailVerificationLink, EmailVerificationLink)
 
 		// unified html body content
-		emailContent := fmt.Sprintf(`<p>You're on your way! Let's confirm your email address. By clicking on the following link, you are confirming your email address.</p> %v`, verifyLink)
+		// first small case the name then title case
+		htmlEmailContent := fmt.Sprintf(`<p>You're on your way!</p> <p>Welcome to our system <strong>%v</strong>. </p> <p>Click the following link to verify your email.</p> %v`, firstName, verifyLink)
 
 		// email subject
 		subject := "Welcome to www.muguku.co.ke! Confirm Your Email"
 
 		// try to send the email in a different go routine
-		go emails.SendEmail(newUser.Email, subject, emailContent)
+		go emails.SendEmail(newUser.Email, subject, plainTextContent, htmlEmailContent)
 
-	}(newUser.EmailVerificationCallBackURL) // self invoke
+	}(newUser.EmailVerificationCallBackURL, newUser.EmailVerificationToken, strings.Title(strings.ToLower(newUser.FirstName))) // self invoke
 
 	// if everything goes right return created object
 	return &RegisterUserPayload{
@@ -393,8 +451,16 @@ func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*L
 	if jwtSecret == "" {
 		// log for the backend
 		log.Printf("ResolveLoginUser: jwt secret returned empty")
-		// then set another placeholder jwt secret
-		jwtSecret = "a_very_!@#$%^&_secret"
+
+		// return an error
+		return &LoginUserPayload{
+			User:        nil,
+			JwtToken:    nil,
+			StatusCode:  500,
+			Message:     "Server error, try again!",
+			FieldErrors: nil,
+		}, nil
+
 	}
 
 	// Create the JWT key used to create the jwt signature
@@ -423,6 +489,14 @@ func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*L
 		// If there is an error creating the JWT
 		// log the error for the backend
 		log.Printf("ResolveLoginUser: error saving user: %v", jwtErr)
+		// return an error
+		return &LoginUserPayload{
+			User:        nil,
+			JwtToken:    nil,
+			StatusCode:  500,
+			Message:     "Server error, try again!",
+			FieldErrors: nil,
+		}, nil
 
 	}
 
@@ -486,10 +560,48 @@ func (r *mutationResolver) VerifyEmail(ctx context.Context, emailVerificationTok
 	if err := db.Model(&user).Where("email_verification_token = ?", emailVerificationToken).Update("is_email_verified", true).Error; err != nil {
 		// error handling
 		log.Println("ResolveVerifyEmail: error changing email verification to true")
+		// return an error
+		return &VerifyEmailPayload{
+			StatusCode: 500,
+			Message:    "Server error, try again!",
+		}, nil
 	}
+
+	// try to send phone verification code
+	// in a different go routine (concurrency)
+	go func() {
+
+		// generate random 6 digit phone verification token
+		PhoneVerificationToken := utils.RandPhoneCodeGenerator()
+
+		if PhoneVerificationToken == 0 {
+			// log for the backend
+			log.Println("ResolveRegisterUser: Anonymous func: error generating phone token")
+		}
+
+		// save this token to the db (update)
+		if err := db.Model(&user).Where("email = ?", user.Email).Update("phone_verification_token", PhoneVerificationToken).Error; err != nil {
+			// error handling
+			log.Println("ResolveRegisterUser: Anonymous func: error saving email_verification_token string")
+		}
+
+		// composed phone verification sms message
+		message := fmt.Sprintf("Your www.muguku.co.ke verification token is: %d", PhoneVerificationToken)
+
+		// receiver
+		receiver := user.PhoneNumber
+
+		// try to send the code in a different go routine
+		go sms.SendSms(receiver, message)
+
+	}() // self invoke
 
 	return &VerifyEmailPayload{
 		StatusCode: 200,
-		Message:    "Email successfully verified!",
+		Message:    "Email successfully verified and Phone verification sent!",
 	}, nil
+}
+
+func (r *mutationResolver) VerifyPhone(ctx context.Context, phoneVerificationToken string) (*VerifyPhonePayload, error) {
+	panic("not implemented")
 }
