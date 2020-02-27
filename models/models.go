@@ -18,6 +18,7 @@ type GormUser struct {
 	IsEmailVerified              bool   `json:"isEmailVerified"`
 	IsPhoneVerified              bool   `json:"isPhoneVerified"`
 	EmailVerificationToken       string `json:"emailVerificationToken" gorm:"unique"`
+	PhoneVerificationToken       string `json:"phoneVerificationToken"`
 	CreatedAt                    time.Time
 	UpdatedAt                    time.Time
 	DeletedAt                    *time.Time `sql:"index"`
