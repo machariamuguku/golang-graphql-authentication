@@ -9,7 +9,7 @@ import (
 )
 
 // SendEmail : function to send emails using sendgrid
-func SendEmail(receiver string, subject string, emailContent string) {
+func SendEmail(receiver, subject, plainTextContent, htmlContent string) {
 
 	// get sendgrid api from .env
 	sendgridAPI := os.Getenv("SENDGRID_API_KEY")
@@ -34,15 +34,13 @@ func SendEmail(receiver string, subject string, emailContent string) {
 	// sent to
 	to := mail.NewEmail("user", receiver)
 
-	// convert content to mail content type
-	content := mail.NewContent("text/html", emailContent)
-
 	// compose the email
-	message := mail.NewV3MailInit(from, subject, to, content)
+	message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
 
 	client := sendgrid.NewSendClient(sendgridAPI)
 	// try to send the email
 	response, err := client.Send(message)
+
 	// if error
 	if err != nil {
 		// log the error for backend
