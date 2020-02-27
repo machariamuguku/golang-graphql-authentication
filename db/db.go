@@ -2,12 +2,14 @@ package db
 
 import (
 	"fmt"
+
 	"github.com/jinzhu/gorm"
-	// gorm postgres dialect- comment to justify underscore import
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/joho/godotenv"
+
 	"log"
 	"os"
+
+	// gorm postgres dialect- comment to justify underscore import
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 // DB *gorm.DB
@@ -17,12 +19,6 @@ type DB struct {
 
 // ConnectDB : connecting DB
 func ConnectDB() (*DB, error) {
-
-	// load .env file
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
-	}
 
 	// database variables
 	host := os.Getenv("DB_HOST")

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/99designs/gqlgen/handler"
+	"github.com/joho/godotenv"
 	golang_graphql_authentication "github.com/machariamuguku/golang-graphql-authentication"
 	"github.com/machariamuguku/golang-graphql-authentication/db"
 )
@@ -13,6 +14,12 @@ import (
 const defaultPort = "8080"
 
 func main() {
+
+	// load .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
 
 	db, err := db.ConnectDB()
 	if err != nil {
