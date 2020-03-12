@@ -161,6 +161,17 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 
 	}
 
+	// generate random 6 digit phone verification token
+	PhoneVerificationToken := utils.RandPhoneCodeGenerator()
+
+	// Todo: handle != 6 characters
+	// both in function and here
+
+	// if len(PhoneVerificationToken) != 6 {
+	// 	// log for the backend
+	// 	log.Println("ResolveRegisterUser: error generating phone token")
+	// }
+
 	// format object to save to db
 	newUser := &models.GormUser{
 		ID:                           uuid.String(),
@@ -171,6 +182,7 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 		Password:                     input.Password,
 		EmailVerificationCallBackURL: input.EmailVerificationCallBackURL,
 		EmailVerificationToken:       EmailVerificationToken,
+		PhoneVerificationToken:       PhoneVerificationToken,
 	}
 
 	// hash password
@@ -295,7 +307,7 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 	// phone number validation using reflection
 	// format html in html template
 	// send the send email fn to the anonymous fn
-	// instead of direct access. pinter maybe?
+	// instead of direct access. pointer maybe?
 
 	// try to send user successfully created
 	// and email verification
@@ -571,19 +583,8 @@ func (r *mutationResolver) VerifyEmail(ctx context.Context, emailVerificationTok
 	// in a different go routine (concurrency)
 	go func() {
 
-		// generate random 6 digit phone verification token
-		PhoneVerificationToken := utils.RandPhoneCodeGenerator()
-
-		if PhoneVerificationToken == 0 {
-			// log for the backend
-			log.Println("ResolveRegisterUser: Anonymous func: error generating phone token")
-		}
-
-		// save this token to the db (update)
-		if err := db.Model(&user).Where("email = ?", user.Email).Update("phone_verification_token", PhoneVerificationToken).Error; err != nil {
-			// error handling
-			log.Println("ResolveRegisterUser: Anonymous func: error saving email_verification_token string")
-		}
+		// get random 6 digit phone verification token from user
+		PhoneVerificationToken := user.PhoneVerificationToken
 
 		// composed phone verification sms message
 		message := fmt.Sprintf("Your www.muguku.co.ke verification token is: %d", PhoneVerificationToken)
@@ -602,6 +603,61 @@ func (r *mutationResolver) VerifyEmail(ctx context.Context, emailVerificationTok
 	}, nil
 }
 
-func (r *mutationResolver) VerifyPhone(ctx context.Context, phoneVerificationToken string) (*VerifyPhonePayload, error) {
-	panic("not implemented")
+func (r *mutationResolver) VerifyPhone(ctx context.Context, phoneVerificationToken int) (*VerifyPhonePayload, error) {
+	// Todo: add token verification func
+	// first verifies token then proceeds
+	// maybe http only cookie?
+
+	// validate for empty or random string of code
+	// the generate phone verification token func generates a 6 characters long string
+	// if len(phoneVerificationToken) != 6 {
+	// 	return &VerifyPhonePayload{
+	// 		StatusCode: 400,
+	// 		Message:    "bad request, check your input!",
+	// 	}, nil
+	// }
+
+	// if no validation errors
+	// initialize the db instance
+	db := r.DB
+
+	user := &models.GormUser{}
+
+	// Todo: use the jwt token to get the user by ID
+	// then check against that user if they have that token
+
+	// check if user with that verification token exists
+	if db.Where("phone_verification_token = ?", phoneVerificationToken).First(&user).RecordNotFound() {
+		// if they don't return error
+		return &VerifyPhonePayload{
+			StatusCode: 400,
+			Message:    "bad request, check your input!",
+		}, nil
+	}
+
+	// check if user is already verified
+	if user.IsPhoneVerified == true {
+		// if yes return message
+		return &VerifyPhonePayload{
+			StatusCode: 400,
+			Message:    "This phone number is already verified!",
+		}, nil
+	}
+
+	// if not verify them (update is phone verified flag to true)
+	if err := db.Model(&user).Where("phone_verification_token = ?", phoneVerificationToken).Update("is_phone_verified", true).Error; err != nil {
+		// error handling
+		log.Println("ResolveVerifyPhone: error changing phone verification to true")
+		// return an error
+		return &VerifyPhonePayload{
+			StatusCode: 500,
+			Message:    "Server error, try again!",
+		}, nil
+	}
+
+	return &VerifyPhonePayload{
+		StatusCode: 200,
+		Message:    "Phone number successfully verified!",
+	}, nil
+
 }

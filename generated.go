@@ -59,7 +59,7 @@ type ComplexityRoot struct {
 	Mutation struct {
 		RegisterUser func(childComplexity int, input RegisterUserInput) int
 		VerifyEmail  func(childComplexity int, emailVerificationToken string) int
-		VerifyPhone  func(childComplexity int, phoneVerificationToken string) int
+		VerifyPhone  func(childComplexity int, phoneVerificationToken int) int
 	}
 
 	Query struct {
@@ -100,7 +100,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	RegisterUser(ctx context.Context, input RegisterUserInput) (*RegisterUserPayload, error)
 	VerifyEmail(ctx context.Context, emailVerificationToken string) (*VerifyEmailPayload, error)
-	VerifyPhone(ctx context.Context, phoneVerificationToken string) (*VerifyPhonePayload, error)
+	VerifyPhone(ctx context.Context, phoneVerificationToken int) (*VerifyPhonePayload, error)
 }
 type QueryResolver interface {
 	LoginUser(ctx context.Context, input LoginUserInput) (*LoginUserPayload, error)
@@ -204,7 +204,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.VerifyPhone(childComplexity, args["phoneVerificationToken"].(string)), true
+		return e.complexity.Mutation.VerifyPhone(childComplexity, args["phoneVerificationToken"].(int)), true
 
 	case "Query.loginUser":
 		if e.complexity.Query.LoginUser == nil {
@@ -431,6 +431,8 @@ input RegisterUserInput {
   email: String!
   phoneNumber: String!
   password: String!
+  # make sure it starts with https:// or http://
+  # or it won't be clickable
   emailVerificationCallBackURL: String!
 }
 
@@ -485,7 +487,7 @@ type Query {
 type Mutation {
   registerUser(input: RegisterUserInput!): RegisterUserPayload!
   verifyEmail(emailVerificationToken: String!): VerifyEmailPayload!
-  verifyPhone(phoneVerificationToken: String!): VerifyPhonePayload!
+  verifyPhone(phoneVerificationToken: Int!): VerifyPhonePayload!
 }
 `},
 )
@@ -525,9 +527,9 @@ func (ec *executionContext) field_Mutation_verifyEmail_args(ctx context.Context,
 func (ec *executionContext) field_Mutation_verifyPhone_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
+	var arg0 int
 	if tmp, ok := rawArgs["phoneVerificationToken"]; ok {
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		arg0, err = ec.unmarshalNInt2int(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -967,7 +969,7 @@ func (ec *executionContext) _Mutation_verifyPhone(ctx context.Context, field gra
 	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().VerifyPhone(rctx, args["phoneVerificationToken"].(string))
+		return ec.resolvers.Mutation().VerifyPhone(rctx, args["phoneVerificationToken"].(int))
 	})
 	if err != nil {
 		ec.Error(ctx, err)

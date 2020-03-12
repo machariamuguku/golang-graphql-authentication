@@ -79,5 +79,5 @@ type Query {
 type Mutation {
   registerUser(input: RegisterUserInput!): RegisterUserPayload!
   verifyEmail(emailVerificationToken: String!): VerifyEmailPayload!
-  verifyPhone(phoneVerificationToken: String!): VerifyPhonePayload!
+  verifyPhone(phoneVerificationToken: Int!): VerifyPhonePayload!
 }
