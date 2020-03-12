@@ -1,11 +1,20 @@
 package main
 
 import (
+	"log"
+
+	"github.com/joho/godotenv"
 	"github.com/machariamuguku/golang-graphql-authentication/db"
 	"github.com/machariamuguku/golang-graphql-authentication/models"
 )
 
 func main() {
+	// load .env file
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
 	db, err := db.ConnectDB()
 	if err != nil {
 		panic(err)
