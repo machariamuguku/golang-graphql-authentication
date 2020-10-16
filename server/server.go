@@ -11,15 +11,14 @@ import (
 	"github.com/machariamuguku/golang-graphql-authentication/db"
 )
 
-const defaultPort = "8080"
-
-func main() {
-
-	// load .env file
-	err := godotenv.Load()
-	if err != nil {
+// load values from .env into the system
+func init() {
+	if err := godotenv.Load(); err != nil {
 		log.Fatal("Error loading .env file")
 	}
+}
+
+func main() {
 
 	db, err := db.ConnectDB()
 	if err != nil {
@@ -29,9 +28,6 @@ func main() {
 	defer db.Close()
 
 	port := os.Getenv("PORT")
-	if port == "" {
-		port = defaultPort
-	}
 
 	http.Handle("/", handler.Playground("GraphQL playground", "/query"))
 	http.Handle("/query", handler.GraphQL(golang_graphql_authentication.NewExecutableSchema(golang_graphql_authentication.Config{Resolvers: &golang_graphql_authentication.Resolver{DB: db}})))
