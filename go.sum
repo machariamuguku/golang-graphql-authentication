@@ -5,6 +5,8 @@ github.com/99designs/gqlgen v0.10.2 h1:FfjCqIWejHDJeLpQTI0neoZo5vDO3sdo5oNCucet3
 github.com/99designs/gqlgen v0.10.2/go.mod h1:aDB7oabSAyZ4kUHLEySsLxnWrBy3lA0A2gWKU+qoHwI=
 github.com/AndroidStudyOpenSource/africastalking-go v0.0.0-20190314130914-bdd09087bcbf h1:sEQOf8k8qBrMDy/STBlX+BTlQTWOABzDfHDwzB6ySYo=
 github.com/AndroidStudyOpenSource/africastalking-go v0.0.0-20190314130914-bdd09087bcbf/go.mod h1:1oj0QW+1duBl8Ono/Gg2NhXpu8fAqFrquBejPq2qy14=
+github.com/AndroidStudyOpenSource/africastalking-go v0.0.0-20200515172509-94a151ad63fe h1:uXPOrFHjkAP3NgAfOXgDwuRa3nkX3w71jT7zYGJFvFk=
+github.com/AndroidStudyOpenSource/africastalking-go v0.0.0-20200515172509-94a151ad63fe/go.mod h1:1oj0QW+1duBl8Ono/Gg2NhXpu8fAqFrquBejPq2qy14=
 github.com/Applifier/go-libphonenumber v0.0.0-20161107150900-64e099bc8ad4 h1:uiJTA4zyx3gMefIIrOO8mdVjzHO/5cwnN2qZKRLmsnE=
 github.com/Applifier/go-libphonenumber v0.0.0-20161107150900-64e099bc8ad4/go.mod h1:jSYsld9I9MsoRWriByGaeITJ2FNPuG9bNqPu2S2pbuw=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
