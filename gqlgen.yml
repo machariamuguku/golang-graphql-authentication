@@ -11,8 +11,5 @@ model:
   filename: models_gen.go
 # Where should the resolver implementations go?
 resolver:
-  layout: follow-schema
-  dir: resolvers
   package: resolvers
-  filename_template: "{name}.resolvers.go"
 autobind: []
