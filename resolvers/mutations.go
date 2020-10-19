@@ -28,137 +28,6 @@ var (
 	validate *validator.Validate
 )
 
-// VerifyEmailMutation : verify email using email verification token sent to email
-func VerifyEmailMutation(ctx context.Context, emailVerificationToken string, r *mutationResolver) (*golang_graphql_authentication.VerifyEmailPayload, error) {
-
-	// validate for empty or random string of code
-	// the email verification token func generates a 62 characters long string
-	if len([]rune(emailVerificationToken)) != 62 {
-		return &golang_graphql_authentication.VerifyEmailPayload{
-			StatusCode: 400,
-			Message:    "bad request, check your input!",
-		}, nil
-	}
-
-	// if no validation errors
-	// initialize the db instance
-	db := r.DB
-
-	user := &models.GormUser{}
-
-	// check if user with that verification token exists
-	if db.Where("email_verification_token = ?", emailVerificationToken).First(&user).RecordNotFound() {
-		// if they don't return error
-		return &golang_graphql_authentication.VerifyEmailPayload{
-			StatusCode: 400,
-			Message:    "bad request, check your input!",
-		}, nil
-	}
-
-	// check if user is already verified
-	if user.IsEmailVerified == true {
-		// if yes return message
-		return &golang_graphql_authentication.VerifyEmailPayload{
-			StatusCode: 400,
-			Message:    "This email is already verified!",
-		}, nil
-	}
-
-	// if not verify them (update is email verified flag to true)
-	if err := db.Model(&user).Where("email_verification_token = ?", emailVerificationToken).Update("is_email_verified", true).Error; err != nil {
-		// error handling
-		log.Println("ResolveVerifyEmail: error changing email verification to true")
-		// return an error
-		return &golang_graphql_authentication.VerifyEmailPayload{
-			StatusCode: 500,
-			Message:    "Server error, try again!",
-		}, nil
-	}
-
-	// try to send phone verification code
-	// in a different go routine (concurrency)
-	go func() {
-
-		// get random 6 digit phone verification token from user
-		PhoneVerificationToken := user.PhoneVerificationToken
-
-		// composed phone verification sms message
-		message := fmt.Sprintf("Your www.muguku.co.ke verification token is: %d", PhoneVerificationToken)
-
-		// receiver
-		receiver := user.PhoneNumber
-
-		// try to send the code in a different go routine
-		go sms.SendSms(receiver, message)
-
-	}() // self invoke
-
-	return &golang_graphql_authentication.VerifyEmailPayload{
-		StatusCode: 200,
-		Message:    "Email successfully verified and Phone verification sent!",
-	}, nil
-
-}
-
-// VerifyPhoneMutation : Verify phone number with phone verification code sent to phone by sms
-func VerifyPhoneMutation(ctx context.Context, phoneVerificationToken int, r *mutationResolver) (*golang_graphql_authentication.VerifyPhonePayload, error) {
-	// Todo: add token verification func
-	// first verifies token then proceeds
-	// maybe http only cookie?
-
-	// validate for empty or random string of code
-	// the generate phone verification token func generates a 6 characters long string
-	// if len(phoneVerificationToken) != 6 {
-	// 	return &VerifyPhonePayload{
-	// 		StatusCode: 400,
-	// 		Message:    "bad request, check your input!",
-	// 	}, nil
-	// }
-
-	// if no validation errors
-	// initialize the db instance
-	db := r.DB
-
-	user := &models.GormUser{}
-
-	// Todo: use the jwt token to get the user by ID
-	// then check against that user if they have that token
-
-	// check if user with that verification token exists
-	if db.Where("phone_verification_token = ?", phoneVerificationToken).First(&user).RecordNotFound() {
-		// if they don't return error
-		return &golang_graphql_authentication.VerifyPhonePayload{
-			StatusCode: 400,
-			Message:    "bad request, check your input!",
-		}, nil
-	}
-
-	// check if user is already verified
-	if user.IsPhoneVerified == true {
-		// if yes return message
-		return &golang_graphql_authentication.VerifyPhonePayload{
-			StatusCode: 400,
-			Message:    "This phone number is already verified!",
-		}, nil
-	}
-
-	// if not verify them (update is phone verified flag to true)
-	if err := db.Model(&user).Where("phone_verification_token = ?", phoneVerificationToken).Update("is_phone_verified", true).Error; err != nil {
-		// error handling
-		log.Println("ResolveVerifyPhone: error changing phone verification to true")
-		// return an error
-		return &golang_graphql_authentication.VerifyPhonePayload{
-			StatusCode: 500,
-			Message:    "Server error, try again!",
-		}, nil
-	}
-
-	return &golang_graphql_authentication.VerifyPhonePayload{
-		StatusCode: 200,
-		Message:    "Phone number successfully verified!",
-	}, nil
-}
-
 // RegisterUserMutation : register user with user inputs after validation and verification
 func RegisterUserMutation(ctx context.Context, input golang_graphql_authentication.RegisterUserInput, r *mutationResolver) (*golang_graphql_authentication.RegisterUserPayload, error) {
 	// validate input fields
@@ -476,5 +345,136 @@ func RegisterUserMutation(ctx context.Context, input golang_graphql_authenticati
 		StatusCode:  200,
 		Message:     "User successfully registered!",
 		FieldErrors: nil,
+	}, nil
+}
+
+// VerifyEmailMutation : verify email using email verification token sent to email
+func VerifyEmailMutation(ctx context.Context, emailVerificationToken string, r *mutationResolver) (*golang_graphql_authentication.VerifyEmailPayload, error) {
+
+	// validate for empty or random string of code
+	// the email verification token func generates a 62 characters long string
+	if len([]rune(emailVerificationToken)) != 62 {
+		return &golang_graphql_authentication.VerifyEmailPayload{
+			StatusCode: 400,
+			Message:    "bad request, check your input!",
+		}, nil
+	}
+
+	// if no validation errors
+	// initialize the db instance
+	db := r.DB
+
+	user := &models.GormUser{}
+
+	// check if user with that verification token exists
+	if db.Where("email_verification_token = ?", emailVerificationToken).First(&user).RecordNotFound() {
+		// if they don't return error
+		return &golang_graphql_authentication.VerifyEmailPayload{
+			StatusCode: 400,
+			Message:    "bad request, check your input!",
+		}, nil
+	}
+
+	// check if user is already verified
+	if user.IsEmailVerified == true {
+		// if yes return message
+		return &golang_graphql_authentication.VerifyEmailPayload{
+			StatusCode: 400,
+			Message:    "This email is already verified!",
+		}, nil
+	}
+
+	// if not verify them (update is email verified flag to true)
+	if err := db.Model(&user).Where("email_verification_token = ?", emailVerificationToken).Update("is_email_verified", true).Error; err != nil {
+		// error handling
+		log.Println("ResolveVerifyEmail: error changing email verification to true")
+		// return an error
+		return &golang_graphql_authentication.VerifyEmailPayload{
+			StatusCode: 500,
+			Message:    "Server error, try again!",
+		}, nil
+	}
+
+	// try to send phone verification code
+	// in a different go routine (concurrency)
+	go func() {
+
+		// get random 6 digit phone verification token from user
+		PhoneVerificationToken := user.PhoneVerificationToken
+
+		// composed phone verification sms message
+		message := fmt.Sprintf("Your www.muguku.co.ke verification token is: %d", PhoneVerificationToken)
+
+		// receiver
+		receiver := user.PhoneNumber
+
+		// try to send the code in a different go routine
+		go sms.SendSms(receiver, message)
+
+	}() // self invoke
+
+	return &golang_graphql_authentication.VerifyEmailPayload{
+		StatusCode: 200,
+		Message:    "Email successfully verified and Phone verification sent!",
+	}, nil
+
+}
+
+// VerifyPhoneMutation : Verify phone number with phone verification code sent to phone by sms
+func VerifyPhoneMutation(ctx context.Context, phoneVerificationToken int, r *mutationResolver) (*golang_graphql_authentication.VerifyPhonePayload, error) {
+	// Todo: add token verification func
+	// first verifies token then proceeds
+	// maybe http only cookie?
+
+	// validate for empty or random string of code
+	// the generate phone verification token func generates a 6 characters long string
+	// if len(phoneVerificationToken) != 6 {
+	// 	return &VerifyPhonePayload{
+	// 		StatusCode: 400,
+	// 		Message:    "bad request, check your input!",
+	// 	}, nil
+	// }
+
+	// if no validation errors
+	// initialize the db instance
+	db := r.DB
+
+	user := &models.GormUser{}
+
+	// Todo: use the jwt token to get the user by ID
+	// then check against that user if they have that token
+
+	// check if user with that verification token exists
+	if db.Where("phone_verification_token = ?", phoneVerificationToken).First(&user).RecordNotFound() {
+		// if they don't return error
+		return &golang_graphql_authentication.VerifyPhonePayload{
+			StatusCode: 400,
+			Message:    "bad request, check your input!",
+		}, nil
+	}
+
+	// check if user is already verified
+	if user.IsPhoneVerified == true {
+		// if yes return message
+		return &golang_graphql_authentication.VerifyPhonePayload{
+			StatusCode: 400,
+			Message:    "This phone number is already verified!",
+		}, nil
+	}
+
+	// if not verify them (update is phone verified flag to true)
+	if err := db.Model(&user).Where("phone_verification_token = ?", phoneVerificationToken).Update("is_phone_verified", true).Error; err != nil {
+		// error handling
+		log.Println("ResolveVerifyPhone: error changing phone verification to true")
+		// return an error
+		return &golang_graphql_authentication.VerifyPhonePayload{
+			StatusCode: 500,
+			Message:    "Server error, try again!",
+		}, nil
+	}
+
+	return &golang_graphql_authentication.VerifyPhonePayload{
+		StatusCode: 200,
+		Message:    "Phone number successfully verified!",
 	}, nil
 }
