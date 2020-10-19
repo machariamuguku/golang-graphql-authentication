@@ -406,7 +406,7 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var parsedSchema = gqlparser.MustLoadSchema(
-	&ast.Source{Name: "schema.graphql", Input: `# GraphQL schema
+	&ast.Source{Name: "schema/schema.graphql", Input: `# GraphQL schema
 
 # base user
 type User {
