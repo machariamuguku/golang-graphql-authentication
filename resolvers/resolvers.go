@@ -1,4 +1,4 @@
-package golang_graphql_authentication
+package resolvers
 
 //go:generate go run github.com/99designs/gqlgen
 
@@ -18,6 +18,8 @@ import (
 	"github.com/machariamuguku/golang-graphql-authentication/models"
 	"github.com/machariamuguku/golang-graphql-authentication/sms"
 	"github.com/machariamuguku/golang-graphql-authentication/utils"
+
+	golang_graphql_authentication "github.com/machariamuguku/golang-graphql-authentication"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/go-playground/locales/en"
@@ -35,17 +37,17 @@ type Resolver struct {
 	DB *db.DB
 }
 
-func (r *Resolver) Mutation() MutationResolver {
+func (r *Resolver) Mutation() golang_graphql_authentication.MutationResolver {
 	return &mutationResolver{r}
 }
 
-func (r *Resolver) Query() QueryResolver {
+func (r *Resolver) Query() golang_graphql_authentication.QueryResolver {
 	return &queryResolver{r}
 }
 
 type mutationResolver struct{ *Resolver }
 
-func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserInput) (*RegisterUserPayload, error) {
+func (r *mutationResolver) RegisterUser(ctx context.Context, input golang_graphql_authentication.RegisterUserInput) (*golang_graphql_authentication.RegisterUserPayload, error) {
 
 	// validate input fields
 
@@ -78,14 +80,14 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 	if ValidationErr != nil {
 
 		// init a slice of field errors
-		var errorsSlice []*FieldErrors
+		var errorsSlice []*golang_graphql_authentication.FieldErrors
 
 		errs := ValidationErr.(validator.ValidationErrors)
 
 		//  translate each error at a time.
 		for _, e := range errs {
-			// model the resultant errors to the expected (fieldErrors struct)
-			errors := &FieldErrors{
+			// model the resultant errors to the expected (golang_graphql_authentication.FieldErrors struct)
+			errors := &golang_graphql_authentication.FieldErrors{
 				Field: e.Field(),
 				Error: e.Translate(trans),
 			}
@@ -94,7 +96,7 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 		}
 
 		// return with validation error
-		return &RegisterUserPayload{
+		return &golang_graphql_authentication.RegisterUserPayload{
 			User:        nil,
 			JwtToken:    nil,
 			StatusCode:  400,
@@ -114,7 +116,7 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 	// check if user already exists
 	if !db.Where("email = ?", input.Email).First(&user).RecordNotFound() {
 		// if they do return user already exists
-		return &RegisterUserPayload{
+		return &golang_graphql_authentication.RegisterUserPayload{
 			User:        nil,
 			JwtToken:    nil,
 			StatusCode:  400,
@@ -134,7 +136,7 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 		log.Printf("ResolveRegisterUser: uid generation error: %v", UIDGenerationErr)
 
 		// return an error
-		return &RegisterUserPayload{
+		return &golang_graphql_authentication.RegisterUserPayload{
 			User:        nil,
 			JwtToken:    nil,
 			StatusCode:  500,
@@ -151,7 +153,7 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 		log.Println("ResolveRegisterUser: Anonymous func: error generating email string")
 
 		// return an error
-		return &RegisterUserPayload{
+		return &golang_graphql_authentication.RegisterUserPayload{
 			User:        nil,
 			JwtToken:    nil,
 			StatusCode:  500,
@@ -192,7 +194,7 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 	if hashPassErr != nil {
 		log.Printf("ResolveRegisterUser: password hashing error: %v", hashPassErr)
 		// return an error
-		return &RegisterUserPayload{
+		return &golang_graphql_authentication.RegisterUserPayload{
 			User:        nil,
 			JwtToken:    nil,
 			StatusCode:  500,
@@ -213,7 +215,7 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 		log.Printf("ResolveRegisterUser: error saving user: %v", err)
 
 		// return an error
-		return &RegisterUserPayload{
+		return &golang_graphql_authentication.RegisterUserPayload{
 			User:        nil,
 			JwtToken:    nil,
 			StatusCode:  500,
@@ -234,8 +236,8 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 		log.Printf("ResolveRegisterUser: jwt secret returned empty")
 
 		// return but with missing keys
-		return &RegisterUserPayload{
-			User: &User{
+		return &golang_graphql_authentication.RegisterUserPayload{
+			User: &golang_graphql_authentication.User{
 				ID:              newUser.ID,
 				FirstName:       newUser.FirstName,
 				LastName:        newUser.LastName,
@@ -282,8 +284,8 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 		log.Printf("ResolveRegisterUser: error saving user: %v", jwtErr)
 
 		// return but with missing keys
-		return &RegisterUserPayload{
-			User: &User{
+		return &golang_graphql_authentication.RegisterUserPayload{
+			User: &golang_graphql_authentication.User{
 				ID:              newUser.ID,
 				FirstName:       newUser.FirstName,
 				LastName:        newUser.LastName,
@@ -346,8 +348,8 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 	}(newUser.EmailVerificationCallBackURL, newUser.EmailVerificationToken, strings.Title(strings.ToLower(newUser.FirstName))) // self invoke
 
 	// if everything goes right return created object
-	return &RegisterUserPayload{
-		User: &User{
+	return &golang_graphql_authentication.RegisterUserPayload{
+		User: &golang_graphql_authentication.User{
 			ID:              newUser.ID,
 			FirstName:       newUser.FirstName,
 			LastName:        newUser.LastName,
@@ -367,7 +369,7 @@ func (r *mutationResolver) RegisterUser(ctx context.Context, input RegisterUserI
 
 type queryResolver struct{ *Resolver }
 
-func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*LoginUserPayload, error) {
+func (r *queryResolver) LoginUser(ctx context.Context, input golang_graphql_authentication.LoginUserInput) (*golang_graphql_authentication.LoginUserPayload, error) {
 	// Todo: modularise the validation function
 
 	// validate input fields
@@ -397,14 +399,14 @@ func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*L
 	if ValidationErr != nil {
 
 		// init a slice of field errors
-		var errorsSlice []*FieldErrors
+		var errorsSlice []*golang_graphql_authentication.FieldErrors
 
 		errs := ValidationErr.(validator.ValidationErrors)
 
 		//  translate each error at a time.
 		for _, e := range errs {
-			// model the resultant errors to the expected (fieldErrors struct)
-			errors := &FieldErrors{
+			// model the resultant errors to the expected (golang_graphql_authentication.FieldErrors struct)
+			errors := &golang_graphql_authentication.FieldErrors{
 				Field: e.Field(),
 				Error: e.Translate(trans),
 			}
@@ -413,7 +415,7 @@ func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*L
 		}
 
 		// return with validation error
-		return &LoginUserPayload{
+		return &golang_graphql_authentication.LoginUserPayload{
 			User:        nil,
 			JwtToken:    nil,
 			StatusCode:  400,
@@ -432,7 +434,7 @@ func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*L
 	// check if user exists
 	if db.Where("email = ?", input.Email).First(&user).RecordNotFound() {
 		// if they do not return error
-		return &LoginUserPayload{
+		return &golang_graphql_authentication.LoginUserPayload{
 			User:        nil,
 			JwtToken:    nil,
 			StatusCode:  400,
@@ -444,7 +446,7 @@ func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*L
 	// Compare the stored hashed password, with the hashed version of the password that was received
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
 		// If the two passwords don't match, return a 404 status and error
-		return &LoginUserPayload{
+		return &golang_graphql_authentication.LoginUserPayload{
 			User:        nil,
 			JwtToken:    nil,
 			StatusCode:  400,
@@ -465,7 +467,7 @@ func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*L
 		log.Printf("ResolveLoginUser: jwt secret returned empty")
 
 		// return an error
-		return &LoginUserPayload{
+		return &golang_graphql_authentication.LoginUserPayload{
 			User:        nil,
 			JwtToken:    nil,
 			StatusCode:  500,
@@ -502,7 +504,7 @@ func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*L
 		// log the error for the backend
 		log.Printf("ResolveLoginUser: error saving user: %v", jwtErr)
 		// return an error
-		return &LoginUserPayload{
+		return &golang_graphql_authentication.LoginUserPayload{
 			User:        nil,
 			JwtToken:    nil,
 			StatusCode:  500,
@@ -513,8 +515,8 @@ func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*L
 	}
 
 	// if everything goes right return created object
-	return &LoginUserPayload{
-		User: &User{
+	return &golang_graphql_authentication.LoginUserPayload{
+		User: &golang_graphql_authentication.User{
 			ID:              user.ID,
 			FirstName:       user.FirstName,
 			LastName:        user.LastName,
@@ -533,12 +535,12 @@ func (r *queryResolver) LoginUser(ctx context.Context, input LoginUserInput) (*L
 
 }
 
-func (r *mutationResolver) VerifyEmail(ctx context.Context, emailVerificationToken string) (*VerifyEmailPayload, error) {
+func (r *mutationResolver) VerifyEmail(ctx context.Context, emailVerificationToken string) (*golang_graphql_authentication.VerifyEmailPayload, error) {
 
 	// validate for empty or random string of code
 	// the email verification token func generates a 62 characters long string
 	if len([]rune(emailVerificationToken)) != 62 {
-		return &VerifyEmailPayload{
+		return &golang_graphql_authentication.VerifyEmailPayload{
 			StatusCode: 400,
 			Message:    "bad request, check your input!",
 		}, nil
@@ -553,7 +555,7 @@ func (r *mutationResolver) VerifyEmail(ctx context.Context, emailVerificationTok
 	// check if user with that verification token exists
 	if db.Where("email_verification_token = ?", emailVerificationToken).First(&user).RecordNotFound() {
 		// if they don't return error
-		return &VerifyEmailPayload{
+		return &golang_graphql_authentication.VerifyEmailPayload{
 			StatusCode: 400,
 			Message:    "bad request, check your input!",
 		}, nil
@@ -562,7 +564,7 @@ func (r *mutationResolver) VerifyEmail(ctx context.Context, emailVerificationTok
 	// check if user is already verified
 	if user.IsEmailVerified == true {
 		// if yes return message
-		return &VerifyEmailPayload{
+		return &golang_graphql_authentication.VerifyEmailPayload{
 			StatusCode: 400,
 			Message:    "This email is already verified!",
 		}, nil
@@ -573,7 +575,7 @@ func (r *mutationResolver) VerifyEmail(ctx context.Context, emailVerificationTok
 		// error handling
 		log.Println("ResolveVerifyEmail: error changing email verification to true")
 		// return an error
-		return &VerifyEmailPayload{
+		return &golang_graphql_authentication.VerifyEmailPayload{
 			StatusCode: 500,
 			Message:    "Server error, try again!",
 		}, nil
@@ -597,13 +599,13 @@ func (r *mutationResolver) VerifyEmail(ctx context.Context, emailVerificationTok
 
 	}() // self invoke
 
-	return &VerifyEmailPayload{
+	return &golang_graphql_authentication.VerifyEmailPayload{
 		StatusCode: 200,
 		Message:    "Email successfully verified and Phone verification sent!",
 	}, nil
 }
 
-func (r *mutationResolver) VerifyPhone(ctx context.Context, phoneVerificationToken int) (*VerifyPhonePayload, error) {
+func (r *mutationResolver) VerifyPhone(ctx context.Context, phoneVerificationToken int) (*golang_graphql_authentication.VerifyPhonePayload, error) {
 	// Todo: add token verification func
 	// first verifies token then proceeds
 	// maybe http only cookie?
@@ -629,7 +631,7 @@ func (r *mutationResolver) VerifyPhone(ctx context.Context, phoneVerificationTok
 	// check if user with that verification token exists
 	if db.Where("phone_verification_token = ?", phoneVerificationToken).First(&user).RecordNotFound() {
 		// if they don't return error
-		return &VerifyPhonePayload{
+		return &golang_graphql_authentication.VerifyPhonePayload{
 			StatusCode: 400,
 			Message:    "bad request, check your input!",
 		}, nil
@@ -638,7 +640,7 @@ func (r *mutationResolver) VerifyPhone(ctx context.Context, phoneVerificationTok
 	// check if user is already verified
 	if user.IsPhoneVerified == true {
 		// if yes return message
-		return &VerifyPhonePayload{
+		return &golang_graphql_authentication.VerifyPhonePayload{
 			StatusCode: 400,
 			Message:    "This phone number is already verified!",
 		}, nil
@@ -649,13 +651,13 @@ func (r *mutationResolver) VerifyPhone(ctx context.Context, phoneVerificationTok
 		// error handling
 		log.Println("ResolveVerifyPhone: error changing phone verification to true")
 		// return an error
-		return &VerifyPhonePayload{
+		return &golang_graphql_authentication.VerifyPhonePayload{
 			StatusCode: 500,
 			Message:    "Server error, try again!",
 		}, nil
 	}
 
-	return &VerifyPhonePayload{
+	return &golang_graphql_authentication.VerifyPhonePayload{
 		StatusCode: 200,
 		Message:    "Phone number successfully verified!",
 	}, nil

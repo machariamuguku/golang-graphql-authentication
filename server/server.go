@@ -9,6 +9,7 @@ import (
 	"github.com/joho/godotenv"
 	golang_graphql_authentication "github.com/machariamuguku/golang-graphql-authentication"
 	"github.com/machariamuguku/golang-graphql-authentication/db"
+	"github.com/machariamuguku/golang-graphql-authentication/resolvers"
 )
 
 // load values from .env into the system
@@ -30,7 +31,7 @@ func main() {
 	port := os.Getenv("PORT")
 
 	http.Handle("/", handler.Playground("GraphQL playground", "/query"))
-	http.Handle("/query", handler.GraphQL(golang_graphql_authentication.NewExecutableSchema(golang_graphql_authentication.Config{Resolvers: &golang_graphql_authentication.Resolver{DB: db}})))
+	http.Handle("/query", handler.GraphQL(golang_graphql_authentication.NewExecutableSchema(golang_graphql_authentication.Config{Resolvers: &resolvers.Resolver{DB: db}})))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
