@@ -28,6 +28,7 @@ var (
 	validate *validator.Validate
 )
 
+// VerifyEmailMutation : verify email using email verification token sent to email
 func VerifyEmailMutation(ctx context.Context, emailVerificationToken string, r *mutationResolver) (*golang_graphql_authentication.VerifyEmailPayload, error) {
 
 	// validate for empty or random string of code
@@ -99,6 +100,7 @@ func VerifyEmailMutation(ctx context.Context, emailVerificationToken string, r *
 
 }
 
+// VerifyPhoneMutation : Verify phone number with phone verification code sent to phone by sms
 func VerifyPhoneMutation(ctx context.Context, phoneVerificationToken int, r *mutationResolver) (*golang_graphql_authentication.VerifyPhonePayload, error) {
 	// Todo: add token verification func
 	// first verifies token then proceeds
@@ -157,6 +159,7 @@ func VerifyPhoneMutation(ctx context.Context, phoneVerificationToken int, r *mut
 	}, nil
 }
 
+// RegisterUserMutation : register user with user inputs after validation and verification
 func RegisterUserMutation(ctx context.Context, input golang_graphql_authentication.RegisterUserInput, r *mutationResolver) (*golang_graphql_authentication.RegisterUserPayload, error) {
 	// validate input fields
 

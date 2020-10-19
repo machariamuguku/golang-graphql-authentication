@@ -16,6 +16,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// LoginUserQuery : Validate existing user
 func LoginUserQuery(ctx context.Context, input golang_graphql_authentication.LoginUserInput, r *queryResolver) (*golang_graphql_authentication.LoginUserPayload, error) {
 
 	// Todo: modularise the validation function
